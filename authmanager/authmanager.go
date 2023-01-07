@@ -65,6 +65,31 @@ func GetClient(ctx context.Context) (*spotify.Client, error) {
 			return nil, err
 		}
 		client := spotify.New(auth.Client(context.Background(), tok))
+		new_token, err := client.Token()
+		if err != nil {
+			return nil, err
+		}
+		if new_token != tok {
+			out, err := json.MarshalIndent(new_token, "", " ")
+			if err != nil {
+				panic(err.Error())
+			}
+			homdir, _ := os.UserHomeDir()
+			err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/auth.json"), out, 0o644)
+			if err != nil {
+				panic("FAILED TO SAVE AUTH")
+			}
+		}
+		out, err := json.MarshalIndent(tok, "", " ")
+		if err != nil {
+			panic(err.Error())
+		}
+		homdir, _ := os.UserHomeDir()
+		err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/auth.json"), out, 0o644)
+		if err != nil {
+			panic("FAILED TO SAVE AUTH")
+		}
+
 		return client, nil
 	}
 	// first start an HTTP server
