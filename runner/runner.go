@@ -19,29 +19,16 @@ func Run(client *spotify.Client, args []string) error {
 	ctx := context.Background()
 	switch args[0] {
 	case "play":
-		err := Play(ctx, client, args)
-		if err != nil {
-			return err
-		}
+		return Play(ctx, client, args)
 	case "pause":
-		err := Pause(ctx, client, args)
-		if err != nil {
-			return err
-		}
+		return Pause(ctx, client, args)
 	case "next":
-		err := Skip(ctx, client, args)
-		if err != nil {
-			return err
-		}
+		return Skip(ctx, client, args)
 	case "shuffle":
-		err := Shuffle(ctx, client, args)
-		if err != nil {
-			return err
-		}
+		return Shuffle(ctx, client, args)
 	default:
 		return fmt.Errorf("Unsupported Command")
 	}
-	return nil
 }
 
 func Play(ctx context.Context, client *spotify.Client, args []string) error {
