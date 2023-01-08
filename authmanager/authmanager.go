@@ -1,7 +1,6 @@
 package authmanager
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -65,7 +64,7 @@ func GetClient(ctx *ctx.Context) (*spotify.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		client := spotify.New(auth.Client(context.Background(), tok))
+		client := spotify.New(auth.Client(ctx, tok))
 		new_token, err := client.Token()
 		if err != nil {
 			return nil, err
