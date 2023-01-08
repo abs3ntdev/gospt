@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"gospt/internal/api"
 	"gospt/internal/auth"
 	"gospt/internal/config"
 	"gospt/internal/gctx"
-	"gospt/internal/runner"
 )
 
 func init() {
@@ -27,7 +27,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	err = runner.Run(ctx, client, os.Args[1:])
+	err = api.Run(ctx, client, os.Args[1:])
 	if err != nil {
 		fmt.Println(err)
 	}

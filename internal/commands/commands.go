@@ -40,12 +40,41 @@ func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	err = client.QueueSong(ctx, spotify.ID(track_id))
 	if err != nil {
 		if isNoActiveError(err) {
-			return queueWithTransfer(ctx, client, spotify.ID(track_id))
+			err = queueWithTransfer(ctx, client, spotify.ID(track_id))
+			if err != nil {
+				return err
+			}
+			err = client.Next(ctx)
+			if err != nil {
+				return err
+			}
+			ctx.Println("Playing!")
+			return nil
 		}
 		return err
 	}
 	err = client.Next(ctx)
+	if err != nil {
+		return err
+	}
 	ctx.Println("Playing!")
+	return nil
+}
+
+func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
+	err := client.QueueSong(ctx, id)
+	if err != nil {
+		if isNoActiveError(err) {
+			err := queueWithTransfer(ctx, client, id)
+			if err != nil {
+				return err
+			}
+			ctx.Println("Queued!")
+			return nil
+		}
+		return err
+	}
+	ctx.Println("Queued!")
 	return nil
 }
 
@@ -231,10 +260,6 @@ func queueWithTransfer(ctx *gctx.Context, client *spotify.Client, track_id spoti
 		return err
 	}
 	err = client.QueueSong(ctx, track_id)
-	if err != nil {
-		return err
-	}
-	err = client.Next(ctx)
 	if err != nil {
 		return err
 	}

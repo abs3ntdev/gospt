@@ -69,11 +69,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "enter" {
 			track := m.list.SelectedItem()
 			var err error
-			err = m.client.QueueSong(m.ctx, track.(item).ID)
+			err = commands.QueueSong(m.ctx, m.client, track.(item).ID)
 			if err != nil {
 				m.ctx.Printf(err.Error())
 			}
-			err = m.client.Next(m.ctx)
+			err = commands.Skip(m.ctx, m.client)
 			if err != nil {
 				m.ctx.Printf(err.Error())
 			}
