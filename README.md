@@ -1,4 +1,4 @@
-IF YOU ARE ON GITHUB.COM GO HERE INSTEAD: https://gitea.asdf.cafe/jjohnston/gospt
+IF YOU ARE ON GITHUB.COM GO HERE INSTEAD: https://gitea.asdf.cafe/abs3nt/gospt
 
 If you open an issue or PR on github I won't see it please use gitea.
 
