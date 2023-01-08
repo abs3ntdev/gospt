@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	auth  *spotifyauth.Authenticator
-	ch    = make(chan *spotify.Client)
-	state = "abc123"
+	auth         *spotifyauth.Authenticator
+	ch           = make(chan *spotify.Client)
+	state        = "abc123"
+	configDir, _ = os.UserConfigDir()
 )
 
 func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
@@ -48,9 +49,8 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 			spotifyauth.ScopeStreaming,
 		),
 	)
-	homdir, _ := os.UserHomeDir()
-	if _, err := os.Stat(filepath.Join(homdir, ".config/gospt/auth.json")); err == nil {
-		authFile, err := os.Open(filepath.Join(homdir, ".config/gospt/auth.json"))
+	if _, err := os.Stat(filepath.Join(configDir, "gospt/auth.json")); err == nil {
+		authFile, err := os.Open(filepath.Join(configDir, "gospt/auth.json"))
 		if err != nil {
 			return nil, err
 		}
@@ -74,8 +74,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 			if err != nil {
 				panic(err.Error())
 			}
-			homdir, _ := os.UserHomeDir()
-			err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/auth.json"), out, 0o644)
+			err = ioutil.WriteFile(filepath.Join(configDir, "gospt/auth.json"), out, 0o644)
 			if err != nil {
 				panic("FAILED TO SAVE AUTH")
 			}
@@ -84,8 +83,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 		if err != nil {
 			panic(err.Error())
 		}
-		homdir, _ := os.UserHomeDir()
-		err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/auth.json"), out, 0o644)
+		err = ioutil.WriteFile(filepath.Join(configDir, "gospt/auth.json"), out, 0o644)
 		if err != nil {
 			panic("FAILED TO SAVE AUTH")
 		}
@@ -131,8 +129,7 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
-	homdir, _ := os.UserHomeDir()
-	err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/auth.json"), out, 0o644)
+	err = ioutil.WriteFile(filepath.Join(configDir, "gospt/auth.json"), out, 0o644)
 	if err != nil {
 		panic("FAILED TO SAVE AUTH")
 	}

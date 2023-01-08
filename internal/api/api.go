@@ -32,6 +32,10 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 		return commands.Shuffle(ctx, client)
 	case "radio":
 		return commands.Radio(ctx, client)
+	case "clearradio":
+		return commands.ClearRadio(ctx, client)
+	case "refillradio":
+		return commands.RefillRadio(ctx, client)
 	case "tracks":
 		return tui.DisplayList(ctx, client)
 	case "status":

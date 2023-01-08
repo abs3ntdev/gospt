@@ -27,6 +27,11 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	currentUser, err := client.CurrentUser(ctx)
+	if err != nil {
+		panic(err.Error())
+	}
+	ctx.UserId = currentUser.ID
 	err = api.Run(ctx, client, os.Args[1:])
 	if err != nil {
 		fmt.Println(err)

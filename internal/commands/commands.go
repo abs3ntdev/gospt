@@ -79,7 +79,14 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 }
 
 func Radio(ctx *gctx.Context, client *spotify.Client) error {
-	rand.Seed(time.Now().Unix())
+	err := ClearRadio(ctx, client)
+	if err != nil {
+		return err
+	}
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
+	}
 	current_song, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
 		return err
@@ -91,24 +98,119 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
+	recomendationIds := []spotify.ID{}
 	for _, song := range recomendations.Tracks {
-		fmt.Println(song.Name)
+		recomendationIds = append(recomendationIds, song.ID)
 	}
-	fmt.Println("QUEUED")
+	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, recomendationIds...)
+	if err != nil {
+		return err
+	}
+	client.PlayOpt(ctx, &spotify.PlayOptions{
+		PlaybackContext: &radioPlaylist.URI,
+		PlaybackOffset: &spotify.PlaybackOffset{
+			Position: 0,
+		},
+	})
+	err = client.Repeat(ctx, "context")
+	if err != nil {
+		return err
+	}
+	rand.Seed(time.Now().Unix())
 	for i := 0; i < 4; i++ {
-		seed_track := recomendations.Tracks[3]
+		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
-			Tracks: []spotify.ID{seed_track.ID},
+			Tracks: []spotify.ID{recomendationIds[id]},
 		}
-		recomendations, err = client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		additional_recs, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
 		if err != nil {
 			return err
 		}
-		for _, song := range recomendations.Tracks {
-			fmt.Println(song.Name)
+		fmt.Println(len(additional_recs.Tracks))
+		additionalRecsIds := []spotify.ID{}
+		for _, song := range additional_recs.Tracks {
+			additionalRecsIds = append(additionalRecsIds, song.ID)
 		}
-		fmt.Println("QUEUED")
+		fmt.Println(len(additionalRecsIds))
+		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
+	status, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("PLAYING", status.PlaybackContext.URI)
+	to_remove := []spotify.ID{}
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	found := false
+	page := 0
+	for !found {
+		tracks, err := client.GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset(page*50))
+		if err != nil {
+			return err
+		}
+		for _, track := range tracks.Items {
+			fmt.Println("CHECKING", track.Track.Track.Name)
+			if track.Track.Track.ID == status.Item.ID {
+				found = true
+				break
+			}
+			to_remove = append(to_remove, track.Track.Track.ID)
+		}
+		page++
+	}
+	recomendationIds := []spotify.ID{}
+	if len(to_remove) > 0 {
+		fmt.Println("REPLENISHING", len(to_remove), "SONGS")
+		_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, to_remove...)
+		if err != nil {
+			return err
+		}
+		current_song, err := client.PlayerCurrentlyPlaying(ctx)
+		if err != nil {
+			return err
+		}
+		seed := spotify.Seeds{
+			Tracks: []spotify.ID{current_song.Item.ID},
+		}
+		recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		if err != nil {
+			return err
+		}
+		for idx, song := range recomendations.Tracks {
+			if idx >= len(to_remove) {
+				break
+			}
+			recomendationIds = append(recomendationIds, song.ID)
+		}
+		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, recomendationIds...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ClearRadio(ctx *gctx.Context, client *spotify.Client) error {
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
+	}
+	err = client.UnfollowPlaylist(ctx, radioPlaylist.ID)
+	if err != nil {
+		return err
+	}
+	configDir, _ := os.UserConfigDir()
+	os.Remove(filepath.Join(configDir, "gospt/radio.json"))
+	client.Pause(ctx)
+	fmt.Println("Radio emptied")
 	return nil
 }
 
@@ -265,4 +367,61 @@ func queueWithTransfer(ctx *gctx.Context, client *spotify.Client, track_id spoti
 	}
 	ctx.Println("Playing!")
 	return nil
+}
+
+func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
+	configDir, _ := os.UserConfigDir()
+	deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
+	if err != nil {
+		return err
+	}
+	defer deviceFile.Close()
+	deviceValue, err := ioutil.ReadAll(deviceFile)
+	if err != nil {
+		return err
+	}
+	var device *spotify.PlayerDevice
+	err = json.Unmarshal(deviceValue, &device)
+	if err != nil {
+		return err
+	}
+	err = client.TransferPlayback(ctx, device.ID, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullPlaylist, error) {
+	configDir, _ := os.UserConfigDir()
+	if _, err := os.Stat(filepath.Join(configDir, "gospt/radio.json")); err == nil {
+		playlistFile, err := os.Open(filepath.Join(configDir, "gospt/radio.json"))
+		if err != nil {
+			return nil, err
+		}
+		defer playlistFile.Close()
+		playlistValue, err := ioutil.ReadAll(playlistFile)
+		if err != nil {
+			return nil, err
+		}
+		var playlist *spotify.FullPlaylist
+		err = json.Unmarshal(playlistValue, &playlist)
+		if err != nil {
+			return nil, err
+		}
+		return playlist, nil
+	}
+	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "gosptRADIO", "This is an automanaged playlist for the custom radio of gospt", false, false)
+	if err != nil {
+		return nil, err
+	}
+	out, err := json.MarshalIndent(playlist, "", " ")
+	if err != nil {
+		return nil, err
+	}
+	err = ioutil.WriteFile(filepath.Join(configDir, "gospt/radio.json"), out, 0o644)
+	if err != nil {
+		return nil, err
+	}
+	return playlist, nil
 }
