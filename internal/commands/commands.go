@@ -84,14 +84,31 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
-	seed_song := current_song.Item.SimpleTrack
-	if !current_song.Playing {
+	var seed_song spotify.SimpleTrack
+
+	if current_song.Item != nil {
+		seed_song = current_song.Item.SimpleTrack
+	}
+	if current_song.Item == nil {
+		err := activateDevice(ctx, client)
+		if err != nil {
+			return err
+		}
 		tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
 		if err != nil {
 			return err
 		}
 		seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
+	} else {
+		if !current_song.Playing {
+			tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
+			if err != nil {
+				return err
+			}
+			seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
+		}
 	}
+
 	seed := spotify.Seeds{
 		Tracks: []spotify.ID{seed_song.ID},
 	}
@@ -418,7 +435,7 @@ func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
-	err = client.TransferPlayback(ctx, device.ID, true)
+	err = client.TransferPlayback(ctx, device.ID, false)
 	if err != nil {
 		return err
 	}
