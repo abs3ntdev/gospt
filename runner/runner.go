@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 
+	"gospt/commands"
 	"gospt/ctx"
 	"gospt/tui"
 
@@ -20,60 +21,18 @@ func Run(ctx *ctx.Context, client *spotify.Client, args []string) error {
 	}
 	switch args[0] {
 	case "play":
-		return Play(ctx, client)
+		return commands.Play(ctx, client)
 	case "pause":
-		return Pause(ctx, client)
+		return commands.Pause(ctx, client)
 	case "next":
-		return Skip(ctx, client)
+		return commands.Skip(ctx, client)
 	case "shuffle":
-		return Shuffle(ctx, client)
+		return commands.Shuffle(ctx, client)
 	case "tracks":
-		return GetTracks(ctx, client, args)
+		return tui.DisplayList(ctx, client)
+	case "status":
+		return commands.Status(ctx, client)
 	default:
 		return fmt.Errorf("Unsupported Command")
 	}
-}
-
-func Play(ctx *ctx.Context, client *spotify.Client) error {
-	err := client.Play(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Playing!")
-	return nil
-}
-
-func Pause(ctx *ctx.Context, client *spotify.Client) error {
-	err := client.Pause(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Pausing!")
-	return nil
-}
-
-func Skip(ctx *ctx.Context, client *spotify.Client) error {
-	err := client.Next(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Skipping!")
-	return nil
-}
-
-func Shuffle(ctx *ctx.Context, client *spotify.Client) error {
-	state, err := client.PlayerState(ctx)
-	if err != nil {
-		return fmt.Errorf("Failed to get current playstate")
-	}
-	err = client.Shuffle(ctx, !state.ShuffleState)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Shuffle set to", !state.ShuffleState)
-	return nil
-}
-
-func GetTracks(ctx *ctx.Context, client *spotify.Client, args []string) error {
-	return tui.DisplayList(ctx, client)
 }

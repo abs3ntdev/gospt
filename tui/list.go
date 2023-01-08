@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"gospt/commands"
 	"gospt/ctx"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -16,14 +17,18 @@ import (
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
 
 type item struct {
+	Name     string
+	Duration string
+	Artist   spotify.SimpleArtist
+	ID       spotify.ID
 	spotify.SavedTrack
 }
 
 func (i item) Title() string { return i.Name }
 func (i item) Description() string {
-	return fmt.Sprint(i.TimeDuration().Round(time.Second), " by ", i.Artists[0].Name)
+	return fmt.Sprint(i.Duration, " by ", i.Artist.Name)
 }
-func (i item) FilterValue() string { return i.Title() }
+func (i item) FilterValue() string { return i.Title() + i.Artist.Name }
 
 type model struct {
 	list   list.Model
@@ -37,26 +42,42 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.list.Paginator.OnLastPage() {
+		tracks, err := commands.TrackList(m.ctx, m.client, (m.page + 1))
+		if err != nil {
+			return m, tea.Quit
+		}
+		m.page++
+		items := []list.Item{}
+		for _, track := range tracks.Tracks {
+			items = append(items, item{
+				Name:     track.Name,
+				Artist:   track.Artists[0],
+				Duration: track.TimeDuration().Round(time.Second).String(),
+				ID:       track.ID,
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
-		if msg.String() == "ctrl+n" {
-			tracks, err := TrackList(m.ctx, m.client, (m.page + 1))
+		if msg.String() == "enter" {
+			track := m.list.SelectedItem()
+			var err error
+			err = m.client.QueueSong(m.ctx, track.(item).ID)
 			if err != nil {
-				return m, tea.Quit
+				m.ctx.Printf(err.Error())
 			}
-			m.page++
-			items := []list.Item{}
-			for _, track := range tracks.Tracks {
-				items = append(items, item{
-					track,
-				})
+			err = m.client.Next(m.ctx)
+			if err != nil {
+				m.ctx.Printf(err.Error())
 			}
-			for _, item := range items {
-				m.list.InsertItem(len(m.list.Items())+1, item)
-			}
+
 		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
@@ -73,16 +94,20 @@ func (m model) View() string {
 }
 
 func DisplayList(ctx *ctx.Context, client *spotify.Client) error {
-	tracks, err := TrackList(ctx, client, 1)
+	items := []list.Item{}
+	tracks, err := commands.TrackList(ctx, client, 1)
 	if err != nil {
 		return err
 	}
-	items := []list.Item{}
 	for _, track := range tracks.Tracks {
 		items = append(items, item{
-			track,
+			Name:     track.Name,
+			Artist:   track.Artists[0],
+			Duration: track.TimeDuration().Round(time.Second).String(),
+			ID:       track.ID,
 		})
 	}
+
 	m := model{list: list.New(items, list.NewDefaultDelegate(), 0, 0), page: 1, ctx: ctx, client: client}
 	m.list.Title = "Saved Tracks"
 
@@ -93,8 +118,4 @@ func DisplayList(ctx *ctx.Context, client *spotify.Client) error {
 		os.Exit(1)
 	}
 	return nil
-}
-
-func TrackList(ctx *ctx.Context, client *spotify.Client, page int) (*spotify.SavedTrackPage, error) {
-	return client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
