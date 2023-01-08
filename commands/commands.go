@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gospt/ctx"
 
@@ -44,6 +46,40 @@ func PlayUrl(ctx *ctx.Context, client *spotify.Client, args []string) error {
 	}
 	err = client.Next(ctx)
 	ctx.Println("Playing!")
+	return nil
+}
+
+func Radio(ctx *ctx.Context, client *spotify.Client) error {
+	rand.Seed(time.Now().Unix())
+	current_song, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	seed := spotify.Seeds{
+		Tracks: []spotify.ID{current_song.Item.ID},
+	}
+	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+	if err != nil {
+		return err
+	}
+	for _, song := range recomendations.Tracks {
+		fmt.Println(song.Name)
+	}
+	fmt.Println("QUEUED")
+	for i := 0; i < 4; i++ {
+		seed_track := recomendations.Tracks[3]
+		seed := spotify.Seeds{
+			Tracks: []spotify.ID{seed_track.ID},
+		}
+		recomendations, err = client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		if err != nil {
+			return err
+		}
+		for _, song := range recomendations.Tracks {
+			fmt.Println(song.Name)
+		}
+		fmt.Println("QUEUED")
+	}
 	return nil
 }
 
