@@ -3,6 +3,10 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"gospt/ctx"
 
@@ -13,10 +17,21 @@ func Play(ctx *ctx.Context, client *spotify.Client) error {
 	var err error
 	err = client.Play(ctx)
 	if err != nil {
+		if isNoActiveError(err) {
+			return playWithTransfer(ctx, client)
+		}
 		return err
 	}
 	ctx.Println("Playing!")
 	return nil
+}
+
+func Devices(ctx *ctx.Context, client *spotify.Client) error {
+	devices, err := client.PlayerDevices(ctx)
+	if err != nil {
+		return err
+	}
+	return PrintDevices(devices)
 }
 
 func Pause(ctx *ctx.Context, client *spotify.Client) error {
@@ -70,5 +85,70 @@ func PrintState(state *spotify.PlayerState) error {
 		return err
 	}
 	fmt.Println(string(out))
+	return nil
+}
+
+func PrintDevices(devices []spotify.PlayerDevice) error {
+	out, err := json.MarshalIndent(devices, "", " ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(out))
+	return nil
+}
+
+func SetDevice(ctx *ctx.Context, client *spotify.Client, args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("Please provide your device ID")
+	}
+	devices, err := client.PlayerDevices(ctx)
+	if err != nil {
+		return err
+	}
+	var set_device spotify.PlayerDevice
+	for _, device := range devices {
+		if device.ID.String() == args[1] {
+			set_device = device
+			break
+		}
+	}
+	out, err := json.MarshalIndent(set_device, "", " ")
+	if err != nil {
+		return err
+	}
+	homdir, _ := os.UserHomeDir()
+	err = ioutil.WriteFile(filepath.Join(homdir, ".config/gospt/device.json"), out, 0o644)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Your device has been set to: ", set_device.Name)
+	return nil
+}
+
+func isNoActiveError(err error) bool {
+	return strings.Contains(err.Error(), "No active device found")
+}
+
+func playWithTransfer(ctx *ctx.Context, client *spotify.Client) error {
+	configDir, _ := os.UserConfigDir()
+	deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
+	if err != nil {
+		return err
+	}
+	defer deviceFile.Close()
+	deviceValue, err := ioutil.ReadAll(deviceFile)
+	if err != nil {
+		return err
+	}
+	var device *spotify.PlayerDevice
+	err = json.Unmarshal(deviceValue, &device)
+	if err != nil {
+		return err
+	}
+	err = client.TransferPlayback(ctx, device.ID, true)
+	if err != nil {
+		return err
+	}
+	ctx.Println("Playing!")
 	return nil
 }

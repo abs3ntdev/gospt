@@ -32,6 +32,10 @@ func Run(ctx *ctx.Context, client *spotify.Client, args []string) error {
 		return tui.DisplayList(ctx, client)
 	case "status":
 		return commands.Status(ctx, client)
+	case "devices":
+		return commands.Devices(ctx, client)
+	case "setdevice":
+		return commands.SetDevice(ctx, client, args)
 	default:
 		return fmt.Errorf("Unsupported Command")
 	}
