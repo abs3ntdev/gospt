@@ -79,21 +79,23 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 }
 
 func Radio(ctx *gctx.Context, client *spotify.Client) error {
-	err := ClearRadio(ctx, client)
-	if err != nil {
-		return err
-	}
-	radioPlaylist, err := GetRadioPlaylist(ctx, client)
-	if err != nil {
-		return err
-	}
+	rand.Seed(time.Now().Unix())
 	current_song, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
 		return err
 	}
-	seed := spotify.Seeds{
-		Tracks: []spotify.ID{current_song.Item.ID},
+	seed_song := current_song.Item.SimpleTrack
+	if !current_song.Playing {
+		tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
+		if err != nil {
+			return err
+		}
+		seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
 	}
+	seed := spotify.Seeds{
+		Tracks: []spotify.ID{seed_song.ID},
+	}
+	fmt.Println("GETTING RECOMENDATIONS FOR", seed_song.Name)
 	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
 	if err != nil {
 		return err
@@ -101,6 +103,14 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 	recomendationIds := []spotify.ID{}
 	for _, song := range recomendations.Tracks {
 		recomendationIds = append(recomendationIds, song.ID)
+	}
+	err = ClearRadio(ctx, client)
+	if err != nil {
+		return err
+	}
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
 	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, recomendationIds...)
 	if err != nil {
@@ -116,7 +126,7 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
-	rand.Seed(time.Now().Unix())
+	fmt.Println("RADIO STARTED")
 	for i := 0; i < 4; i++ {
 		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
@@ -126,17 +136,16 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(len(additional_recs.Tracks))
 		additionalRecsIds := []spotify.ID{}
 		for _, song := range additional_recs.Tracks {
 			additionalRecsIds = append(additionalRecsIds, song.ID)
 		}
-		fmt.Println(len(additionalRecsIds))
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
 			return err
 		}
 	}
+	fmt.Println("500 TRACKS QUEUED")
 	return nil
 }
 
@@ -145,7 +154,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("PLAYING", status.PlaybackContext.URI)
 	to_remove := []spotify.ID{}
 	radioPlaylist, err := GetRadioPlaylist(ctx, client)
 	found := false
@@ -156,7 +164,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 			return err
 		}
 		for _, track := range tracks.Items {
-			fmt.Println("CHECKING", track.Track.Track.Name)
 			if track.Track.Track.ID == status.Item.ID {
 				found = true
 				break
@@ -194,7 +201,7 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 			return err
 		}
 	}
-
+	fmt.Println("RADIO REPLENISHED")
 	return nil
 }
 

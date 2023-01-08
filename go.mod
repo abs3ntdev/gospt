@@ -8,7 +8,6 @@ require (
 	github.com/charmbracelet/lipgloss v0.6.0
 	github.com/cristalhq/aconfig v0.18.3
 	github.com/cristalhq/aconfig/aconfigyaml v0.17.1
-	github.com/zmb3/spotify v1.3.0
 	github.com/zmb3/spotify/v2 v2.3.1
 	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
 )
