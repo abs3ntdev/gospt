@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,14 +15,34 @@ import (
 )
 
 func Play(ctx *ctx.Context, client *spotify.Client) error {
-	var err error
-	err = client.Play(ctx)
+	err := client.Play(ctx)
 	if err != nil {
 		if isNoActiveError(err) {
 			return playWithTransfer(ctx, client)
 		}
 		return err
 	}
+	ctx.Println("Playing!")
+	return nil
+}
+
+func PlayUrl(ctx *ctx.Context, client *spotify.Client, args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("Please provide a url")
+	}
+	url, err := url.Parse(args[1])
+	if err != nil {
+		return err
+	}
+	track_id := strings.Split(url.Path, "/")[2]
+	err = client.QueueSong(ctx, spotify.ID(track_id))
+	if err != nil {
+		if isNoActiveError(err) {
+			return queueWithTransfer(ctx, client, spotify.ID(track_id))
+		}
+		return err
+	}
+	err = client.Next(ctx)
 	ctx.Println("Playing!")
 	return nil
 }
@@ -146,6 +167,38 @@ func playWithTransfer(ctx *ctx.Context, client *spotify.Client) error {
 		return err
 	}
 	err = client.TransferPlayback(ctx, device.ID, true)
+	if err != nil {
+		return err
+	}
+	ctx.Println("Playing!")
+	return nil
+}
+
+func queueWithTransfer(ctx *ctx.Context, client *spotify.Client, track_id spotify.ID) error {
+	configDir, _ := os.UserConfigDir()
+	deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
+	if err != nil {
+		return err
+	}
+	defer deviceFile.Close()
+	deviceValue, err := ioutil.ReadAll(deviceFile)
+	if err != nil {
+		return err
+	}
+	var device *spotify.PlayerDevice
+	err = json.Unmarshal(deviceValue, &device)
+	if err != nil {
+		return err
+	}
+	err = client.TransferPlayback(ctx, device.ID, true)
+	if err != nil {
+		return err
+	}
+	err = client.QueueSong(ctx, track_id)
+	if err != nil {
+		return err
+	}
+	err = client.Next(ctx)
 	if err != nil {
 		return err
 	}

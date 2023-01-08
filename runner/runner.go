@@ -22,6 +22,8 @@ func Run(ctx *ctx.Context, client *spotify.Client, args []string) error {
 	switch args[0] {
 	case "play":
 		return commands.Play(ctx, client)
+	case "playurl":
+		return commands.PlayUrl(ctx, client, args)
 	case "pause":
 		return commands.Pause(ctx, client)
 	case "next":
