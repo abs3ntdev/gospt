@@ -22,18 +22,24 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	switch args[0] {
 	case "play":
 		return commands.Play(ctx, client)
-	case "playurl":
-		return commands.PlayUrl(ctx, client, args)
 	case "pause":
 		return commands.Pause(ctx, client)
+	case "toggleplay":
+		return commands.TogglePlay(ctx, client)
+	case "next":
+		return commands.Skip(ctx, client)
+	case "previous":
+		return commands.Previous(ctx, client)
+	case "playurl":
+		return commands.PlayUrl(ctx, client, args)
 	case "like":
 		return commands.Like(ctx, client)
 	case "unlike":
 		return commands.Unlike(ctx, client)
-	case "next":
-		return commands.Skip(ctx, client)
 	case "shuffle":
 		return commands.Shuffle(ctx, client)
+	case "repeat":
+		return commands.Repeat(ctx, client)
 	case "radio":
 		return commands.Radio(ctx, client)
 	case "clearradio":
@@ -47,7 +53,7 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	case "devices":
 		return commands.Devices(ctx, client)
 	case "setdevice":
-		return commands.SetDevice(ctx, client, args)
+		return tui.DisplayDevices(ctx, client)
 	default:
 		return fmt.Errorf("Unsupported Command")
 	}
