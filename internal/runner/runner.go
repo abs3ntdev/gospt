@@ -3,9 +3,9 @@ package runner
 import (
 	"fmt"
 
-	"gospt/commands"
-	"gospt/ctx"
-	"gospt/tui"
+	"gospt/internal/commands"
+	"gospt/internal/ctx"
+	"gospt/internal/tui"
 
 	"github.com/zmb3/spotify/v2"
 )

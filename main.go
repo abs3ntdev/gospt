@@ -7,19 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"gospt/authmanager"
-	"gospt/config"
-	"gospt/ctx"
-	"gospt/runner"
-
-	"github.com/zmb3/spotify/v2"
-	spotifyauth "github.com/zmb3/spotify/v2/auth"
-)
-
-var (
-	auth  *spotifyauth.Authenticator
-	ch    = make(chan *spotify.Client)
-	state = "abc123"
+	"gospt/internal/auth"
+	"gospt/internal/config"
+	"gospt/internal/ctx"
+	"gospt/internal/runner"
 )
 
 func init() {
@@ -32,7 +23,7 @@ func main() {
 	var err error
 	log.New(os.Stdout, "LOG:", 0)
 	ctx := ctx.NewContext(context.Background())
-	client, err := authmanager.GetClient(ctx)
+	client, err := auth.GetClient(ctx)
 	if err != nil {
 		panic(err.Error())
 	}

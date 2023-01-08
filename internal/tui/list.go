@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"gospt/commands"
-	"gospt/ctx"
+	"gospt/internal/commands"
+	"gospt/internal/ctx"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"

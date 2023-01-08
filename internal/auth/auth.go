@@ -1,4 +1,4 @@
-package authmanager
+package auth
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gospt/config"
-	"gospt/ctx"
+	"gospt/internal/config"
+	"gospt/internal/ctx"
 
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"gospt/ctx"
+	"gospt/internal/ctx"
 
 	"github.com/zmb3/spotify/v2"
 )
