@@ -231,6 +231,32 @@ func Pause(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
+func Like(ctx *gctx.Context, client *spotify.Client) error {
+	playing, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	err = client.AddTracksToLibrary(ctx, playing.Item.ID)
+	if err != nil {
+		return err
+	}
+	ctx.Println("Pausing!")
+	return nil
+}
+
+func Unlike(ctx *gctx.Context, client *spotify.Client) error {
+	playing, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	err = client.RemoveTracksFromLibrary(ctx, playing.Item.ID)
+	if err != nil {
+		return err
+	}
+	ctx.Println("Pausing!")
+	return nil
+}
+
 func Skip(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Next(ctx)
 	if err != nil {

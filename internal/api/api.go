@@ -26,6 +26,10 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 		return commands.PlayUrl(ctx, client, args)
 	case "pause":
 		return commands.Pause(ctx, client)
+	case "like":
+		return commands.Like(ctx, client)
+	case "unlike":
+		return commands.Unlike(ctx, client)
 	case "next":
 		return commands.Skip(ctx, client)
 	case "shuffle":
