@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"gospt/config"
+	"gospt/ctx"
 
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -23,7 +24,7 @@ var (
 	state = "abc123"
 )
 
-func GetClient(ctx context.Context) (*spotify.Client, error) {
+func GetClient(ctx *ctx.Context) (*spotify.Client, error) {
 	auth = spotifyauth.New(
 		spotifyauth.WithClientID(config.Values.ClientId),
 		spotifyauth.WithClientSecret(config.Values.ClientSecret),
@@ -89,7 +90,6 @@ func GetClient(ctx context.Context) (*spotify.Client, error) {
 		if err != nil {
 			panic("FAILED TO SAVE AUTH")
 		}
-
 		return client, nil
 	}
 	// first start an HTTP server
@@ -103,7 +103,6 @@ func GetClient(ctx context.Context) (*spotify.Client, error) {
 			log.Fatal(err)
 		}
 	}()
-	fmt.Println("LOGGING IN NOW")
 	url := auth.AuthURL(state)
 	fmt.Println("GO HERE", url)
 

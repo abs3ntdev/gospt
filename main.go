@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
 	"gospt/authmanager"
 	"gospt/config"
+	"gospt/ctx"
 	"gospt/runner"
 
 	"github.com/zmb3/spotify/v2"
@@ -28,12 +30,13 @@ func init() {
 
 func main() {
 	var err error
-	ctx := context.Background()
+	log.New(os.Stdout, "LOG:", 0)
+	ctx := ctx.NewContext(context.Background())
 	client, err := authmanager.GetClient(ctx)
 	if err != nil {
 		panic(err.Error())
 	}
-	err = runner.Run(client, os.Args[1:])
+	err = runner.Run(ctx, client, os.Args[1:])
 	if err != nil {
 		fmt.Println(err)
 	}

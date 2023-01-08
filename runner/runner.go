@@ -1,37 +1,40 @@
 package runner
 
 import (
-	"context"
 	"fmt"
+
+	"gospt/ctx"
+	"gospt/tui"
 
 	"github.com/zmb3/spotify/v2"
 )
 
-func Run(client *spotify.Client, args []string) error {
+func Run(ctx *ctx.Context, client *spotify.Client, args []string) error {
 	if len(args) == 0 {
-		user, err := client.CurrentUser(context.Background())
+		user, err := client.CurrentUser(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get current user")
 		}
 		fmt.Println("The following commands are currently supported:\nplay pause next shuffle\nhave fun", user.DisplayName)
 		return nil
 	}
-	ctx := context.Background()
 	switch args[0] {
 	case "play":
-		return Play(ctx, client, args)
+		return Play(ctx, client)
 	case "pause":
-		return Pause(ctx, client, args)
+		return Pause(ctx, client)
 	case "next":
-		return Skip(ctx, client, args)
+		return Skip(ctx, client)
 	case "shuffle":
-		return Shuffle(ctx, client, args)
+		return Shuffle(ctx, client)
+	case "tracks":
+		return GetTracks(ctx, client, args)
 	default:
 		return fmt.Errorf("Unsupported Command")
 	}
 }
 
-func Play(ctx context.Context, client *spotify.Client, args []string) error {
+func Play(ctx *ctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {
 		return err
@@ -40,7 +43,7 @@ func Play(ctx context.Context, client *spotify.Client, args []string) error {
 	return nil
 }
 
-func Pause(ctx context.Context, client *spotify.Client, args []string) error {
+func Pause(ctx *ctx.Context, client *spotify.Client) error {
 	err := client.Pause(ctx)
 	if err != nil {
 		return err
@@ -49,7 +52,7 @@ func Pause(ctx context.Context, client *spotify.Client, args []string) error {
 	return nil
 }
 
-func Skip(ctx context.Context, client *spotify.Client, args []string) error {
+func Skip(ctx *ctx.Context, client *spotify.Client) error {
 	err := client.Next(ctx)
 	if err != nil {
 		return err
@@ -58,7 +61,7 @@ func Skip(ctx context.Context, client *spotify.Client, args []string) error {
 	return nil
 }
 
-func Shuffle(ctx context.Context, client *spotify.Client, args []string) error {
+func Shuffle(ctx *ctx.Context, client *spotify.Client) error {
 	state, err := client.PlayerState(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get current playstate")
@@ -69,4 +72,8 @@ func Shuffle(ctx context.Context, client *spotify.Client, args []string) error {
 	}
 	fmt.Println("Shuffle set to", !state.ShuffleState)
 	return nil
+}
+
+func GetTracks(ctx *ctx.Context, client *spotify.Client, args []string) error {
+	return tui.DisplayList(ctx, client)
 }
