@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"gospt/internal/commands"
-	"gospt/internal/ctx"
+	"gospt/internal/gctx"
 	"gospt/internal/tui"
 
 	"github.com/zmb3/spotify/v2"
 )
 
-func Run(ctx *ctx.Context, client *spotify.Client, args []string) error {
+func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) == 0 {
 		user, err := client.CurrentUser(ctx)
 		if err != nil {

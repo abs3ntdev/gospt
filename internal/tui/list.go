@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gospt/internal/commands"
-	"gospt/internal/ctx"
+	"gospt/internal/gctx"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -33,7 +33,7 @@ func (i item) FilterValue() string { return i.Title() + i.Artist.Name }
 type model struct {
 	list   list.Model
 	page   int
-	ctx    *ctx.Context
+	ctx    *gctx.Context
 	client *spotify.Client
 }
 
@@ -93,7 +93,7 @@ func (m model) View() string {
 	return docStyle.Render(m.list.View())
 }
 
-func DisplayList(ctx *ctx.Context, client *spotify.Client) error {
+func DisplayList(ctx *gctx.Context, client *spotify.Client) error {
 	items := []list.Item{}
 	tracks, err := commands.TrackList(ctx, client, 1)
 	if err != nil {

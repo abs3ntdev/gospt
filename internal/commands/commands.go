@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"gospt/internal/ctx"
+	"gospt/internal/gctx"
 
 	"github.com/zmb3/spotify/v2"
 )
 
-func Play(ctx *ctx.Context, client *spotify.Client) error {
+func Play(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {
 		if isNoActiveError(err) {
@@ -28,7 +28,7 @@ func Play(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func PlayUrl(ctx *ctx.Context, client *spotify.Client, args []string) error {
+func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("Please provide a url")
 	}
@@ -49,7 +49,7 @@ func PlayUrl(ctx *ctx.Context, client *spotify.Client, args []string) error {
 	return nil
 }
 
-func Radio(ctx *ctx.Context, client *spotify.Client) error {
+func Radio(ctx *gctx.Context, client *spotify.Client) error {
 	rand.Seed(time.Now().Unix())
 	current_song, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
@@ -83,7 +83,7 @@ func Radio(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func Devices(ctx *ctx.Context, client *spotify.Client) error {
+func Devices(ctx *gctx.Context, client *spotify.Client) error {
 	devices, err := client.PlayerDevices(ctx)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func Devices(ctx *ctx.Context, client *spotify.Client) error {
 	return PrintDevices(devices)
 }
 
-func Pause(ctx *ctx.Context, client *spotify.Client) error {
+func Pause(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Pause(ctx)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func Pause(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func Skip(ctx *ctx.Context, client *spotify.Client) error {
+func Skip(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Next(ctx)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func Skip(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func Status(ctx *ctx.Context, client *spotify.Client) error {
+func Status(ctx *gctx.Context, client *spotify.Client) error {
 	state, err := client.PlayerState(ctx)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func Status(ctx *ctx.Context, client *spotify.Client) error {
 	return PrintState(state)
 }
 
-func Shuffle(ctx *ctx.Context, client *spotify.Client) error {
+func Shuffle(ctx *gctx.Context, client *spotify.Client) error {
 	state, err := client.PlayerState(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get current playstate")
@@ -130,7 +130,7 @@ func Shuffle(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func TrackList(ctx *ctx.Context, client *spotify.Client, page int) (*spotify.SavedTrackPage, error) {
+func TrackList(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.SavedTrackPage, error) {
 	return client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
 
@@ -154,7 +154,7 @@ func PrintDevices(devices []spotify.PlayerDevice) error {
 	return nil
 }
 
-func SetDevice(ctx *ctx.Context, client *spotify.Client, args []string) error {
+func SetDevice(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("Please provide your device ID")
 	}
@@ -186,7 +186,7 @@ func isNoActiveError(err error) bool {
 	return strings.Contains(err.Error(), "No active device found")
 }
 
-func playWithTransfer(ctx *ctx.Context, client *spotify.Client) error {
+func playWithTransfer(ctx *gctx.Context, client *spotify.Client) error {
 	configDir, _ := os.UserConfigDir()
 	deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
 	if err != nil {
@@ -210,7 +210,7 @@ func playWithTransfer(ctx *ctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func queueWithTransfer(ctx *ctx.Context, client *spotify.Client, track_id spotify.ID) error {
+func queueWithTransfer(ctx *gctx.Context, client *spotify.Client, track_id spotify.ID) error {
 	configDir, _ := os.UserConfigDir()
 	deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
 	if err != nil {

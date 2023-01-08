@@ -9,7 +9,7 @@ import (
 
 	"gospt/internal/auth"
 	"gospt/internal/config"
-	"gospt/internal/ctx"
+	"gospt/internal/gctx"
 	"gospt/internal/runner"
 )
 
@@ -22,7 +22,7 @@ func init() {
 func main() {
 	var err error
 	log.New(os.Stdout, "LOG:", 0)
-	ctx := ctx.NewContext(context.Background())
+	ctx := gctx.NewContext(context.Background())
 	client, err := auth.GetClient(ctx)
 	if err != nil {
 		panic(err.Error())

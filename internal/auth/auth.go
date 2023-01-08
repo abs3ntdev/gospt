@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"gospt/internal/config"
-	"gospt/internal/ctx"
+	"gospt/internal/gctx"
 
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -23,7 +23,7 @@ var (
 	state = "abc123"
 )
 
-func GetClient(ctx *ctx.Context) (*spotify.Client, error) {
+func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 	auth = spotifyauth.New(
 		spotifyauth.WithClientID(config.Values.ClientId),
 		spotifyauth.WithClientSecret(config.Values.ClientSecret),
