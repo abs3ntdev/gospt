@@ -12,12 +12,7 @@ import (
 
 func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) == 0 {
-		user, err := client.CurrentUser(ctx)
-		if err != nil {
-			return fmt.Errorf("Failed to get current user")
-		}
-		fmt.Println("The following commands are currently supported:\nplay pause next shuffle\nhave fun", user.DisplayName)
-		return nil
+		return tui.DisplayMain(ctx, client)
 	}
 	switch args[0] {
 	case "play":

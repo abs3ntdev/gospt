@@ -65,8 +65,9 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "backspace" || msg.String() == "q" {
-			DisplayPlaylists(m.ctx, m.client)
+		if msg.String() == "backspace" || msg.String() == "q" || msg.String() == "esc" {
+			DisplayMain(m.ctx, m.client)
+			return m, tea.Quit
 		}
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
