@@ -27,3 +27,14 @@ then
 
 you will be asked to login, you will only have to do this the first time. After login you will be asked to select your default device, this will also only happen once. To reset your device run ```gospot setdevice```
 
+
+To use the custom radio feature:
+
+```gospt radio```
+
+
+or hit ctrl+r on any track in the TUI. This will start an extended radio. To replenish the current radio run ```gospt refillradio``` and all the songs already listened will be removed and that number of new recomendations will be added.
+
+This radio uses slightly different logic than the standard spotify radio to give a longer playlist and more recomendation. With a cronjob you can schedule refill to run to have an infinite and morphing radio station.
+
+Very open to contributations feel free to open a PR
