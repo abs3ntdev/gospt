@@ -7,6 +7,9 @@ steps:
   image: golang:1.19
   commands:
   - go build -o gospt
+  - gospt completion zsh > gospt_zsh
+  - gospt completion shell > gospt_shell
+  - gospt completion fish > gospt_fish
 - name: gitea_release
   image: plugins/gitea-release
   settings:
@@ -16,6 +19,9 @@ steps:
     base_url: https://gitea.asdf.cafe
     files:
       - gospt
+      - gospt_zsh
+      - gospt_shell
+      - gospt_fish
     checksum: sha256
 
 trigger:

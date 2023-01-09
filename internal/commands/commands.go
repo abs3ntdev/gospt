@@ -44,10 +44,7 @@ func Play(ctx *gctx.Context, client *spotify.Client) error {
 }
 
 func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {
-	if len(args) < 2 {
-		return fmt.Errorf("Please provide a url")
-	}
-	url, err := url.Parse(args[1])
+	url, err := url.Parse(args[0])
 	if err != nil {
 		return err
 	}
