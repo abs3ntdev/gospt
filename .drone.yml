@@ -20,4 +20,5 @@ trigger:
   branch:
     - main
   event:
+    - push
     - tag
