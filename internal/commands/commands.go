@@ -95,7 +95,7 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.I
 	seed := spotify.Seeds{
 		Tracks: []spotify.ID{song_id},
 	}
-	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(99))
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,9 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.I
 	if err != nil {
 		return err
 	}
-	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, recomendationIds...)
+	queue := []spotify.ID{song_id}
+	queue = append(queue, recomendationIds...)
+	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
 		return err
 	}
