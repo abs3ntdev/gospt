@@ -1,6 +1,6 @@
 # Maintainer: abs3nt <abs3nt@asdf.cafe>
 pkgname="gospt"
-pkgver=0.0.2
+pkgver=0.0.6
 pkgrel=1
 epoch=1
 pkgdesc="Spotify TUI and CLI written in Go"
@@ -11,10 +11,7 @@ depends=()
 source=(
   "https://gitea.asdf.cafe/abs3nt/gospt/releases/download/v${pkgver}/gospt"
 )
-sha256sums=(
-  'c9aab61c73733bfbedbd046c73469d873271b65d4c0a8fce51a27d9871fff6b9'
-)
-
 package() {
 	install -Dm755 gospt "${pkgdir}"/usr/bin/gospt
 }
+sha256sums=('8f0d0b4c2924ad07c36547ee3f4a59313bb02f50398dbe16c175dca58718eb1f')

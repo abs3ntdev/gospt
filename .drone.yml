@@ -14,12 +14,12 @@ steps:
       from_secret:
         GITEA
     base_url: https://gitea.asdf.cafe
-    files: gospt
+    files:
+      - gospt
     checksum: sha256
 
 trigger:
   event:
-    - push
     - tag
   when:
       event:

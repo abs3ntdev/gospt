@@ -2,7 +2,7 @@ hashes: build
 	sha256sum gospt
 
 srcinfo:
-	cd aur && makepkg --printsrcinfo > .SRCINFO
+	cd aur && makepkg -g >> PKGBUILD
 
 build:
 	go build -o gospt .
