@@ -22,3 +22,8 @@ trigger:
   event:
     - push
     - tag
+  when:
+      event:
+      - tag
+      ref:
+      - refs/tags/v*
