@@ -8,6 +8,7 @@ import (
 	"gospt/internal/commands"
 	"gospt/internal/gctx"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/zmb3/spotify/v2"
@@ -135,7 +136,11 @@ func PlaylistTracks(ctx *gctx.Context, client *spotify.Client, playlist spotify.
 		playlist: playlist,
 	}
 	m.list.Title = playlist.Name
-
+	m.list.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl", "r"), key.WithHelp("ctrl+r", "start radio")),
+		}
+	}
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	if _, err := p.Run(); err != nil {

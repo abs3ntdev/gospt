@@ -8,6 +8,7 @@ import (
 	"gospt/internal/commands"
 	"gospt/internal/gctx"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -133,6 +134,11 @@ func DisplayList(ctx *gctx.Context, client *spotify.Client) error {
 		page:   1,
 		ctx:    ctx,
 		client: client,
+	}
+	m.list.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl", "r"), key.WithHelp("ctrl+r", "start radio")),
+		}
 	}
 	m.list.Title = "Saved Tracks"
 
