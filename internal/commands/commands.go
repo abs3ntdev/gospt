@@ -468,7 +468,8 @@ func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullP
 		}
 		return playlist, nil
 	}
-	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "gosptRADIO", "This is an automanaged playlist for the custom radio of gospt", false, false)
+	// private flag doesnt work
+	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "Radio", "Automanaged radio playlist", false, false)
 	if err != nil {
 		return nil, err
 	}
