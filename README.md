@@ -23,8 +23,7 @@ client_secret: SECRET
 
 then
 
-```gospt [command]```
+```gospt```
 
-example:
+you will be asked to login, you will only have to do this the first time. After login you will be asked to select your default device, this will also only happen once. To reset your device run ```gospot setdevice```
 
-```gospt play```
