@@ -67,8 +67,14 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "backspace" || msg.String() == "q" || msg.String() == "esc" {
-			DisplayMain(m.ctx, m.client)
-			return m, tea.Quit
+			m, err := InitMain(m.ctx, m.client)
+			if err != nil {
+				fmt.Println("UH OH")
+			}
+			P = tea.NewProgram(m, tea.WithAltScreen())
+			if err := P.Start(); err != nil {
+				return m, tea.Quit
+			}
 		}
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
@@ -102,6 +108,7 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.View()
 	}
 
 	var cmd tea.Cmd
@@ -148,4 +155,36 @@ func PlaylistTracks(ctx *gctx.Context, client *spotify.Client, playlist spotify.
 		os.Exit(1)
 	}
 	return nil
+}
+
+func InitPlaylists(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) (tea.Model, error) {
+	items := []list.Item{}
+	tracks, err := commands.PlaylistTracks(ctx, client, playlist.ID, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, track := range tracks.Tracks {
+		items = append(items, item{
+			Name:     track.Track.Name,
+			Artist:   track.Track.Artists[0],
+			Duration: track.Track.TimeDuration().Round(time.Second).String(),
+			ID:       track.Track.ID,
+		})
+	}
+
+	m := playlistTracksModel{
+		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		page:     1,
+		ctx:      ctx,
+		client:   client,
+		playlist: playlist,
+	}
+	m.list.Title = playlist.Name
+	m.list.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl", "r"), key.WithHelp("ctrl+r", "start radio")),
+		}
+	}
+	m.View()
+	return m, err
 }

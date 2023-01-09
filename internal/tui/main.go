@@ -64,10 +64,23 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 			case spotify.SimplePlaylist:
 				playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
-				PlaylistTracks(m.ctx, m.client, playlist)
-				return m, tea.Quit
+				p, err := InitPlaylists(m.ctx, m.client, playlist)
+				if err != nil {
+					return m, tea.Quit
+				}
+				play := tea.NewProgram(p, tea.WithAltScreen(), tea.WithMouseCellMotion())
+				if _, err := play.Run(); err != nil {
+					return m, tea.Quit
+				}
 			case *spotify.SavedTrackPage:
-				DisplayList(m.ctx, m.client)
+				p, err := InitSavedTracks(m.ctx, m.client)
+				if err != nil {
+					return m, tea.Quit
+				}
+				play := tea.NewProgram(p, tea.WithAltScreen(), tea.WithMouseCellMotion())
+				if _, err := play.Run(); err != nil {
+					return m, tea.Quit
+				}
 				return m, tea.Quit
 			}
 			return m, tea.Quit
@@ -127,4 +140,33 @@ func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
 		os.Exit(1)
 	}
 	return nil
+}
+
+func InitMain(ctx *gctx.Context, client *spotify.Client) (tea.Model, error) {
+	items := []list.Item{}
+	saved_items, err := commands.TrackList(ctx, client, 1)
+	items = append(items, mainItem{
+		Name:        "Saved Tracks",
+		Desc:        fmt.Sprintf("%d saved songs", saved_items.Total),
+		SpotifyItem: saved_items,
+	})
+	playlists, err := commands.Playlists(ctx, client, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, playlist := range playlists.Playlists {
+		items = append(items, mainItem{
+			Name:        playlist.Name,
+			Desc:        playlist.Description,
+			SpotifyItem: playlist,
+		})
+	}
+	m := mainModel{
+		list:   list.New(items, list.NewDefaultDelegate(), 0, 0),
+		page:   1,
+		ctx:    ctx,
+		client: client,
+	}
+	m.list.Title = "GOSPT"
+	return m, nil
 }

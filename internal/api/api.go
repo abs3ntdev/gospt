@@ -16,7 +16,7 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) == 0 {
 		configDir, _ := os.UserConfigDir()
 		if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err != nil {
-			return tui.DisplayDevices(ctx, client)
+			return tui.StartTea(ctx, client)
 		}
 		return tui.DisplayMain(ctx, client)
 	}
