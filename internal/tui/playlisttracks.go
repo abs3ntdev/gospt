@@ -10,13 +10,10 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/zmb3/spotify/v2"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
-
-type item struct {
+type track struct {
 	Name     string
 	Duration string
 	Artist   spotify.SimpleArtist
@@ -24,28 +21,29 @@ type item struct {
 	spotify.SavedTrack
 }
 
-func (i item) Title() string { return i.Name }
-func (i item) Description() string {
+func (i track) Title() string { return i.Name }
+func (i track) Description() string {
 	return fmt.Sprint(i.Duration, " by ", i.Artist.Name)
 }
-func (i item) FilterValue() string { return i.Title() + i.Artist.Name }
+func (i track) FilterValue() string { return i.Title() + i.Artist.Name }
 
-type model struct {
-	list   list.Model
-	page   int
-	ctx    *gctx.Context
-	client *spotify.Client
+type playlistTracksModel struct {
+	list     list.Model
+	page     int
+	ctx      *gctx.Context
+	client   *spotify.Client
+	playlist spotify.SimplePlaylist
 }
 
-func (m model) Init() tea.Cmd {
+func (m playlistTracksModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.list.Paginator.OnLastPage() {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
-			tracks, err := commands.TrackList(m.ctx, m.client, (m.page + 1))
+			tracks, err := commands.PlaylistTracks(m.ctx, m.client, m.playlist.ID, (m.page + 1))
 			if err != nil {
 				return m, tea.Quit
 			}
@@ -53,19 +51,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items := []list.Item{}
 			for _, track := range tracks.Tracks {
 				items = append(items, item{
-					Name:     track.Name,
-					Artist:   track.Artists[0],
-					Duration: track.TimeDuration().Round(time.Second).String(),
-					ID:       track.ID,
+					Name:     track.Track.Name,
+					Artist:   track.Track.Artists[0],
+					Duration: track.Track.TimeDuration().Round(time.Second).String(),
+					ID:       track.Track.ID,
 				})
 			}
 			for _, item := range items {
 				m.list.InsertItem(len(m.list.Items())+1, item)
 			}
+
 		}
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if msg.String() == "backspace" || msg.String() == "q" {
+			DisplayPlaylists(m.ctx, m.client)
+		}
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
@@ -105,30 +107,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
+func (m playlistTracksModel) View() string {
 	return docStyle.Render(m.list.View())
 }
 
-func DisplayList(ctx *gctx.Context, client *spotify.Client) error {
+func PlaylistTracks(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) error {
 	items := []list.Item{}
-	tracks, err := commands.TrackList(ctx, client, 1)
+	tracks, err := commands.PlaylistTracks(ctx, client, playlist.ID, 1)
 	if err != nil {
 		return err
 	}
 	for _, track := range tracks.Tracks {
 		items = append(items, item{
-			Name:     track.Name,
-			Artist:   track.Artists[0],
-			Duration: track.TimeDuration().Round(time.Second).String(),
-			ID:       track.ID,
+			Name:     track.Track.Name,
+			Artist:   track.Track.Artists[0],
+			Duration: track.Track.TimeDuration().Round(time.Second).String(),
+			ID:       track.Track.ID,
 		})
 	}
 
-	m := model{
-		list:   list.New(items, list.NewDefaultDelegate(), 0, 0),
-		page:   1,
-		ctx:    ctx,
-		client: client,
+	m := playlistTracksModel{
+		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		page:     1,
+		ctx:      ctx,
+		client:   client,
+		playlist: playlist,
 	}
 	m.list.Title = "Saved Tracks"
 

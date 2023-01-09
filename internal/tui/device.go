@@ -53,6 +53,14 @@ func (m deviceModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Println("DEVICE SET")
 			return m, tea.Quit
 		}
+	case tea.MouseMsg:
+		if msg.Type == 5 {
+			m.list.CursorUp()
+		}
+		if msg.Type == 6 {
+			m.list.CursorDown()
+		}
+
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
@@ -84,7 +92,7 @@ func DisplayDevices(ctx *gctx.Context, client *spotify.Client) error {
 	m := deviceModel{list: list.New(items, list.NewDefaultDelegate(), 0, 0), page: 1, ctx: ctx, client: client}
 	m.list.Title = "Saved Tracks"
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)

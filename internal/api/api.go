@@ -48,6 +48,8 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 		return commands.RefillRadio(ctx, client)
 	case "tracks":
 		return tui.DisplayList(ctx, client)
+	case "playlists":
+		return tui.DisplayPlaylists(ctx, client)
 	case "status":
 		return commands.Status(ctx, client)
 	case "devices":
