@@ -8,7 +8,7 @@ steps:
   commands:
   - go build -o gospt
   - ./gospt completion zsh > gospt_zsh
-  - ./gospt completion shell > gospt_shell
+  - ./gospt completion bash > gospt_bash
   - ./gospt completion fish > gospt_fish
 - name: gitea_release
   image: plugins/gitea-release
