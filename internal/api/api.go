@@ -54,6 +54,8 @@ func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 		return commands.Status(ctx, client)
 	case "devices":
 		return commands.Devices(ctx, client)
+	case "nowplaying":
+		return commands.NowPlaying(ctx, client)
 	case "setdevice":
 		return tui.DisplayDevices(ctx, client)
 	default:

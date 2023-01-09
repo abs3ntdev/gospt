@@ -325,6 +325,14 @@ func Status(ctx *gctx.Context, client *spotify.Client) error {
 	return PrintState(state)
 }
 
+func NowPlaying(ctx *gctx.Context, client *spotify.Client) error {
+	current, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	return PrintPlaying(current)
+}
+
 func Shuffle(ctx *gctx.Context, client *spotify.Client) error {
 	state, err := client.PlayerState(ctx)
 	if err != nil {
@@ -361,6 +369,10 @@ func TrackList(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.Sa
 	return client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
 
+func GetQueue(ctx *gctx.Context, client *spotify.Client) (*spotify.Queue, error) {
+	return client.GetQueue(ctx)
+}
+
 func Playlists(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.SimplePlaylistPage, error) {
 	return client.CurrentUsersPlaylists(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
@@ -377,6 +389,11 @@ func PrintState(state *spotify.PlayerState) error {
 		return err
 	}
 	fmt.Println(string(out))
+	return nil
+}
+
+func PrintPlaying(current *spotify.CurrentlyPlaying) error {
+	fmt.Println(fmt.Sprintf("%s by %s", current.Item.Name, current.Item.Artists[0].Name))
 	return nil
 }
 
