@@ -7,6 +7,14 @@ steps:
   image: golang
   commands:
   - go build
+- name: gitea_release
+  image: plugins/gitea-release
+  settings:
+    api_key:
+      from_secret:
+        GiteaKey
+    base_url: https://gitea.asdf.cafe
+    files: gospt
 
 trigger:
   branch:
