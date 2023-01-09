@@ -12,7 +12,7 @@ steps:
   settings:
     api_key:
       from_secret:
-        GiteaKey
+        GITEA
     base_url: https://gitea.asdf.cafe
     files: gospt
 
