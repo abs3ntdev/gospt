@@ -10,9 +10,6 @@ import (
 var Values struct {
 	ClientId     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
-	DeviceId     string `yaml:"device_id"`
-	Port         int    `yaml:"port"`
-	DeviceName   string `yaml:"device_name"`
 }
 
 func LoadConfig(configDir string) {

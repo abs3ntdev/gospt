@@ -91,7 +91,8 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 	return nil
 }
 
-func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.ID) error {
+func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.ID, pos int) error {
+	start := time.Now().UnixMilli()
 	seed := spotify.Seeds{
 		Tracks: []spotify.ID{song_id},
 	}
@@ -117,11 +118,16 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.I
 	if err != nil {
 		return err
 	}
+	delay := time.Now().UnixMilli() - start
+	if pos != 0 {
+		pos = pos + int(delay)
+	}
 	client.PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
 		PlaybackOffset: &spotify.PlaybackOffset{
 			Position: 0,
 		},
+		PositionMs: pos,
 	})
 	err = client.Repeat(ctx, "context")
 	if err != nil {
@@ -178,7 +184,7 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 			seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
 		}
 	}
-	return RadioGivenSong(ctx, client, seed_song.ID)
+	return RadioGivenSong(ctx, client, seed_song.ID, current_song.Progress)
 }
 
 func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {

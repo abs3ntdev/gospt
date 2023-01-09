@@ -75,7 +75,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == "ctrl+r" {
 			track := m.list.SelectedItem()
-			err := commands.RadioGivenSong(m.ctx, m.client, track.(item).ID)
+			err := commands.RadioGivenSong(m.ctx, m.client, track.(item).ID, 0)
 			if err != nil {
 				return m, tea.Quit
 			}

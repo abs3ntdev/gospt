@@ -25,6 +25,13 @@ var (
 )
 
 func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
+	if config.Values.ClientId == "" || config.Values.ClientSecret == "" {
+		configDir, _ := os.UserConfigDir()
+		fmt.Println("PLEASE WRITE YOUR CONFIG FILE IN", filepath.Join(configDir, "gospt/client.yml"))
+		fmt.Println("GO HERE TO AND MAKE AN APPLICATION: https://developer.spotify.com/dashboard/applications")
+		fmt.Println("\nclient_id: \"idgoesherelikethis\"\nclient_secret: \"secretgoesherelikethis\"")
+		return nil, fmt.Errorf("\nINVALID CONFIG")
+	}
 	auth = spotifyauth.New(
 		spotifyauth.WithClientID(config.Values.ClientId),
 		spotifyauth.WithClientSecret(config.Values.ClientSecret),

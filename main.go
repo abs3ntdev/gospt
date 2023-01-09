@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	homeDir, _ := os.UserHomeDir()
-	configDir := filepath.Join(homeDir, ".config/gospt/")
+	configPath, _ := os.UserConfigDir()
+	configDir := filepath.Join(configPath, "gospt")
 	config.LoadConfig(configDir)
 }
 
@@ -25,7 +25,8 @@ func main() {
 	ctx := gctx.NewContext(context.Background())
 	client, err := auth.GetClient(ctx)
 	if err != nil {
-		panic(err.Error())
+		fmt.Println(err.Error())
+		return
 	}
 	currentUser, err := client.CurrentUser(ctx)
 	if err != nil {
