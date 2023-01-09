@@ -4,9 +4,9 @@ name: default
 
 steps:
 - name: build
-  image: golang
+  image: golang:1.19
   commands:
-  - GOARCH=amd64 GOOS=linux go build -o bin/gospt main.go
+  - go build -o bin/gospt
 - name: gitea_release
   image: plugins/gitea-release
   settings:

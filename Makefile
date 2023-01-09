@@ -7,7 +7,7 @@ srcinfo:
 	cd aur && makepkg --printsrcinfo > .SRCINFO
 
 build:
-	GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME} main.go
+	go build -o bin/${BINARY_NAME}
 
 run:
 	go run main.go
