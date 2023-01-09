@@ -20,7 +20,7 @@ steps:
     files:
       - gospt
       - gospt_zsh
-      - gospt_shell
+      - gospt_bash
       - gospt_fish
     checksum: sha256
 
