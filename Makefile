@@ -1,5 +1,3 @@
-BINARY_NAME=gospt
-
 hashes: build
 	sha256sum gospt
 
@@ -7,7 +5,7 @@ srcinfo:
 	cd aur && makepkg --printsrcinfo > .SRCINFO
 
 build:
-	go build -o ${BINARY_NAME}
+	go build -o gospt .
 
 run:
 	go run main.go

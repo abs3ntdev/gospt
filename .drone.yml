@@ -15,6 +15,7 @@ steps:
         GITEA
     base_url: https://gitea.asdf.cafe
     files: gospt
+    checksum: sha256
 
 trigger:
   event:
