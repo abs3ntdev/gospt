@@ -1,5 +1,11 @@
 BINARY_NAME=gospt
 
+hashes: build
+	sha256sum bin/gospt
+
+srcinfo:
+	cd aur && makepkg --printsrcinfo > .SRCINFO
+
 build:
 	GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME} main.go
 
