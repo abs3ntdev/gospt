@@ -17,8 +17,6 @@ steps:
     files: gospt
 
 trigger:
-  branch:
-    - main
   event:
     - push
     - tag
