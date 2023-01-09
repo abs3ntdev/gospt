@@ -16,6 +16,14 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+func PrintHelp(ctx *gctx.Context) error {
+	fmt.Println("Usage: gospt [command]")
+	fmt.Println("if no command is provided then TUI will open")
+	fmt.Println("\ncurrently available commands:")
+	fmt.Println("help, play, pause, toggleplay, \nnext, previous, playurl, like, unlike, shuffle, \nrepeat, radio, clearradio, refillradio, tracks, \nclearradio, playlists, status, devices, nowplaying, setdevice")
+	return nil
+}
+
 func Play(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {

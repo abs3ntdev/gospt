@@ -118,7 +118,7 @@ func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
 		ctx:    ctx,
 		client: client,
 	}
-	m.list.Title = "Saved Tracks"
+	m.list.Title = "GOSPT"
 
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 

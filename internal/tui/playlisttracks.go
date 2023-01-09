@@ -134,7 +134,7 @@ func PlaylistTracks(ctx *gctx.Context, client *spotify.Client, playlist spotify.
 		client:   client,
 		playlist: playlist,
 	}
-	m.list.Title = "Saved Tracks"
+	m.list.Title = playlist.Name
 
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 

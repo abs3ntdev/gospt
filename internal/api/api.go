@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"gospt/internal/commands"
 	"gospt/internal/gctx"
@@ -12,9 +14,15 @@ import (
 
 func Run(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	if len(args) == 0 {
+		configDir, _ := os.UserConfigDir()
+		if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err != nil {
+			return tui.DisplayDevices(ctx, client)
+		}
 		return tui.DisplayMain(ctx, client)
 	}
 	switch args[0] {
+	case "help", "--help":
+		return commands.PrintHelp(ctx)
 	case "play":
 		return commands.Play(ctx, client)
 	case "pause":

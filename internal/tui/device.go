@@ -43,14 +43,16 @@ func (m deviceModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if msg.String() == "enter" {
-			fmt.Println("SELECTING")
 			device := m.list.SelectedItem()
 			var err error
 			err = commands.SetDevice(m.ctx, m.client, device.(deviceItem).PlayerDevice)
 			if err != nil {
 				m.ctx.Printf(err.Error())
 			}
-			fmt.Println("DEVICE SET")
+			err = DisplayMain(m.ctx, m.client)
+			if err != nil {
+				return m, tea.Quit
+			}
 			return m, tea.Quit
 		}
 	case tea.MouseMsg:
