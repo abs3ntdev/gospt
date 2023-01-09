@@ -6,7 +6,7 @@ steps:
 - name: build
   image: golang:1.19
   commands:
-  - go build -o bin/gospt
+  - go build -o gospt
 - name: gitea_release
   image: plugins/gitea-release
   settings:

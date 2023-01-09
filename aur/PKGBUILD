@@ -1,6 +1,6 @@
 # Maintainer: abs3nt <abs3nt@asdf.cafe>
 pkgname="gospt"
-pkgver=0.0.1
+pkgver=0.0.2
 pkgrel=1
 epoch=1
 pkgdesc="Spotify TUI and CLI written in Go"
