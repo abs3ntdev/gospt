@@ -12,7 +12,7 @@ source=(
   "https://gitea.asdf.cafe/abs3nt/gospt/releases/download/v${pkgver}/gospt"
 )
 sha256sums=(
-  'c6597d5b3f3762f58f9f750a3e0f5402b9fb507c4b0f3028a037c69eb34d110a'
+  'c9aab61c73733bfbedbd046c73469d873271b65d4c0a8fce51a27d9871fff6b9'
 )
 
 package() {

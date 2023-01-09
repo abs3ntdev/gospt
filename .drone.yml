@@ -14,7 +14,7 @@ steps:
       from_secret:
         GITEA
     base_url: https://gitea.asdf.cafe
-    files: bin/gospt
+    files: gospt
 
 trigger:
   event:
