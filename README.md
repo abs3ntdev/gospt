@@ -37,4 +37,4 @@ or hit ctrl+r on any track in the TUI. This will start an extended radio. To rep
 
 This radio uses slightly different logic than the standard spotify radio to give a longer playlist and more recomendation. With a cronjob you can schedule refill to run to have an infinite and morphing radio station.
 
-Very open to contributations feel free to open a PR
+Very open to contributations feel free to open a PR :)
