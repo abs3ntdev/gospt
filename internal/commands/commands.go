@@ -378,6 +378,14 @@ func Status(ctx *gctx.Context, client *spotify.Client) error {
 	return PrintState(state)
 }
 
+func Link(ctx *gctx.Context, client *spotify.Client) (string, error) {
+	state, err := client.PlayerState(ctx)
+	if err != nil {
+		return "", err
+	}
+	return state.Item.ExternalURLs["spotify"], nil
+}
+
 func NowPlaying(ctx *gctx.Context, client *spotify.Client) error {
 	current, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
