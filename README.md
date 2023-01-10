@@ -9,6 +9,13 @@ Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 
 to install:
 
+```yay -S gospt```
+or to build from source
+
+```git clone https://gitea.asdf.cafe/abs3nt/gospt```
+
+```cd gospt```
+
 ```make build```
 then
 
@@ -20,7 +27,7 @@ to use add your information to ~/.config/gospt/client.yml like this
 ---
 client_id: ID
 client_secret: SECRET
-``` 
+```
 
 then run
 
@@ -37,7 +44,6 @@ To use the custom radio feature:
 or hit ctrl+r on any track in the TUI. This will start an extended radio. To replenish the current radio run ```gospt refillradio``` and all the songs already listened will be removed and that number of new recomendations will be added.
 
 This radio uses slightly different logic than the standard spotify radio to give a longer playlist and more recomendation. With a cronjob you can schedule refill to run to have an infinite and morphing radio station.
-
 
 To view help:
 
