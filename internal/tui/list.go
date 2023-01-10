@@ -78,7 +78,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		if msg.String() == "ctrl+c" {
-			os.Exit(0)
+			return m, tea.Quit
 		}
 		if msg.String() == "ctrl+r" {
 			track := m.list.SelectedItem()

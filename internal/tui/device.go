@@ -40,7 +40,7 @@ func (m deviceModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
-			os.Exit(0)
+			return m, tea.Quit
 		}
 		if msg.String() == "enter" {
 			device := m.list.SelectedItem()
