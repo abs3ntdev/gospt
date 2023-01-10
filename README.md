@@ -25,7 +25,6 @@ then
 to use add your information to ~/.config/gospt/client.yml like this
 
 ```
----
 client_id: ID
 client_secret: SECRET
 ```
