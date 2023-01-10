@@ -88,6 +88,53 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 	return nil
 }
 
+func PlaySongInPlaylist(ctx *gctx.Context, client *spotify.Client, context *spotify.URI, offset int) error {
+	err := client.PlayOpt(ctx, &spotify.PlayOptions{
+		PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
+		PlaybackContext: context,
+	})
+	return err
+}
+
+func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) error {
+	err := ClearRadio(ctx, client)
+	if err != nil {
+		return err
+	}
+	playlist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
+	}
+	songs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(position))
+	if err != nil {
+		return err
+	}
+	to_add := []spotify.ID{}
+	for _, song := range songs.Tracks {
+		to_add = append(to_add, song.ID)
+	}
+	client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
+	client.PlayOpt(ctx, &spotify.PlayOptions{
+		PlaybackContext: &playlist.URI,
+		PlaybackOffset: &spotify.PlaybackOffset{
+			Position: 0,
+		},
+	})
+	for page := 2; page <= 5; page++ {
+		songs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((50*(page-1))+position))
+		if err != nil {
+			return err
+		}
+		to_add := []spotify.ID{}
+		for _, song := range songs.Tracks {
+			to_add = append(to_add, song.ID)
+		}
+		client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
+	}
+
+	return err
+}
+
 func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.ID, pos int) error {
 	start := time.Now().UnixMilli()
 	seed := spotify.Seeds{
@@ -491,7 +538,6 @@ func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullP
 	// private flag doesnt work
 	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
-		fmt.Println("AHHHHHHHHHHHHh", ctx.UserId)
 		return nil, err
 	}
 	out, err := json.MarshalIndent(playlist, "", " ")

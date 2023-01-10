@@ -88,13 +88,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		if msg.String() == "enter" {
-			track := m.list.SelectedItem()
 			var err error
-			err = commands.QueueSong(m.ctx, m.client, track.(item).ID)
-			if err != nil {
-				m.ctx.Printf(err.Error())
-			}
-			err = commands.Skip(m.ctx, m.client)
+			err = commands.PlayLikedSongs(m.ctx, m.client, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 			if err != nil {
 				m.ctx.Printf(err.Error())
 			}
