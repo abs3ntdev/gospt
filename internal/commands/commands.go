@@ -238,8 +238,16 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
+	if !status.Playing {
+		fmt.Println("Nothing is playing")
+		return nil
+	}
 	to_remove := []spotify.ID{}
 	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if status.PlaybackContext.URI != radioPlaylist.URI {
+		fmt.Println("You are not playing the radio, please run gospt radio to start")
+		return nil
+	}
 	found := false
 	page := 0
 	for !found {
