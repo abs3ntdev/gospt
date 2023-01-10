@@ -14,7 +14,7 @@ var radioCmd = &cobra.Command{
 	Use:   "radio",
 	Short: "Starts radio",
 	Long:  `Starts radio`,
-	Run: func(cmd *cobra.Command, args []string) {
-		commands.Radio(ctx, client)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return commands.Radio(ctx, client)
 	},
 }

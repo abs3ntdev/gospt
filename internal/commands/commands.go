@@ -16,14 +16,6 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func PrintHelp(ctx *gctx.Context) error {
-	fmt.Println("Usage: gospt [command]")
-	fmt.Println("if no command is provided then TUI will open")
-	fmt.Println("\ncurrently available commands:")
-	fmt.Println("help, play, pause, toggleplay, \nnext, previous, playurl, like, unlike, shuffle, \nrepeat, radio, clearradio, refillradio, tracks, \nclearradio, playlists, status, devices, nowplaying, setdevice")
-	return nil
-}
-
 func Play(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {
@@ -175,6 +167,7 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 		if err != nil {
 			return err
 		}
+
 		tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
 		if err != nil {
 			return err
@@ -182,6 +175,7 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 		seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
 	} else {
 		if !current_song.Playing {
+
 			tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
 			if err != nil {
 				return err
@@ -233,7 +227,7 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 			return err
 		}
 		for idx, song := range recomendations.Tracks {
-			if idx >= len(to_remove) {
+			if idx > len(to_remove) {
 				break
 			}
 			recomendationIds = append(recomendationIds, song.ID)
@@ -249,6 +243,7 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 func ClearRadio(ctx *gctx.Context, client *spotify.Client) error {
 	radioPlaylist, err := GetRadioPlaylist(ctx, client)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	err = client.UnfollowPlaylist(ctx, radioPlaylist.ID)
@@ -494,8 +489,9 @@ func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullP
 		return playlist, nil
 	}
 	// private flag doesnt work
-	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "Radio", "Automanaged radio playlist", false, false)
+	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
+		fmt.Println("AHHHHHHHHHHHHh", ctx.UserId)
 		return nil, err
 	}
 	out, err := json.MarshalIndent(playlist, "", " ")

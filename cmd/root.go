@@ -54,7 +54,11 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-
+		currentUser, err := client.CurrentUser(ctx)
+		if err != nil {
+			panic(err)
+		}
+		ctx.UserId = currentUser.ID
 	}
 }
 
