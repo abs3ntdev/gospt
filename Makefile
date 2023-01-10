@@ -1,9 +1,3 @@
-hashes: build
-	sha256sum gospt
-
-srcinfo:
-	cd aur && makepkg -g >> PKGBUILD
-
 build:
 	mkdir -p bin
 	go build -o ./bin/gospt .

@@ -2,6 +2,8 @@ IF YOU ARE ON GITHUB.COM GO HERE INSTEAD: https://gitea.asdf.cafe/abs3nt/gospt
 
 If you open an issue or PR on github I won't see it please use gitea. Register on asdf and open your PRs there
 
+This project is still under heavy development and some things might not work or not work as intended. Don't hesitate to open an issue to let me know.
+
 ---
 
 this will eventually be a tui most likely using bubble tea :)
