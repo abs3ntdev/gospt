@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"gospt/internal/auth"
 	"gospt/internal/config"
@@ -83,5 +85,13 @@ func initConfig() {
 	})
 	if err := loader.Load(); err != nil {
 		panic(err)
+	}
+	if config.Values.ClientSecretCmd != "" {
+		args := strings.Fields(config.Values.ClientSecretCmd)
+		secret, err := exec.Command(args[0], args[1:]...).Output()
+		if err != nil {
+			panic(err)
+		}
+		config.Values.ClientSecret = strings.TrimSpace(string(secret))
 	}
 }
