@@ -11,7 +11,7 @@ to install:
 
 ```yay -S gospt```
 
-or to build from source
+or to build from source by pulling and building the binary
 
 ```git clone https://gitea.asdf.cafe/abs3nt/gospt```
 
