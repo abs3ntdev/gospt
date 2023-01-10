@@ -10,6 +10,7 @@ Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 to install:
 
 ```yay -S gospt```
+
 or to build from source
 
 ```git clone https://gitea.asdf.cafe/abs3nt/gospt```
