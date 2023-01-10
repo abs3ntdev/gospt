@@ -50,4 +50,4 @@ To view help:
 
 ```gospt --help```
 
-Very open to contributations feel free to open a PR :)
+Very open to contributations feel free to open a PR
