@@ -57,8 +57,8 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
+		if msg.String() == "ctrl+c" || msg.String() == "q" || msg.String() == "esc" {
+			os.Exit(0)
 		}
 		if msg.String() == "enter" {
 			switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {

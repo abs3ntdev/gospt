@@ -63,7 +63,7 @@ func (m playlistModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
+			os.Exit(0)
 		}
 		if msg.String() == "enter" {
 			playlist := m.list.SelectedItem().(playlistItem).SimplePlaylist
