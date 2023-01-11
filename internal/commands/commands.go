@@ -489,7 +489,6 @@ func SetDevice(ctx *gctx.Context, client *spotify.Client, device spotify.PlayerD
 	if err != nil {
 		return err
 	}
-	fmt.Println("Your device has been set to: ", device.Name)
 	return nil
 }
 

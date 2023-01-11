@@ -20,8 +20,8 @@ var tuiCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configDir, _ := os.UserConfigDir()
 		if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err != nil {
-			return tui.StartTea(ctx, client)
+			return tui.StartTea(ctx, client, "devices")
 		}
-		return tui.DisplayMain(ctx, client)
+		return tui.StartTea(ctx, client, "main")
 	},
 }

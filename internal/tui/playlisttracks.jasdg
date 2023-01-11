@@ -43,6 +43,23 @@ func (m playlistTracksModel) Init() tea.Cmd {
 	return nil
 }
 
+func HandlePlay(ctx *gctx.Context, client *spotify.Client, uri *spotify.URI, pos int) {
+	var err error
+	err = commands.PlaySongInPlaylist(ctx, client, uri, pos)
+	if err != nil {
+		fmt.Println()
+		os.Exit(1)
+	}
+}
+
+func HandleRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
+	err := commands.RadioGivenSong(ctx, client, id, 0)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
 func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	select {
 	case msg := <-list_updates:
@@ -58,7 +75,7 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "backspace" || msg.String() == "q" || msg.String() == "esc" {
-			m, err := InitMain(m.ctx, m.client)
+			m, err := InitMain(m.ctx, m.client, "main")
 			if err != nil {
 				fmt.Println("UH OH")
 			}
@@ -71,18 +88,11 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if msg.String() == "ctrl+r" {
-			track := m.list.SelectedItem()
-			err := commands.RadioGivenSong(m.ctx, m.client, track.(item).ID, 0)
-			if err != nil {
-				return m, tea.Quit
-			}
+			go HandleRadio(m.ctx, m.client, m.list.SelectedItem().(item).ID)
 		}
 		if msg.String() == "enter" {
-			var err error
-			err = commands.PlaySongInPlaylist(m.ctx, m.client, &m.playlist.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
-			if err != nil {
-				m.ctx.Printf(err.Error())
-			}
+			currentlyPlaying = "FUCK YOU"
+			go HandlePlay(m.ctx, m.client, &m.playlist.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 		}
 	case tea.MouseMsg:
 		if msg.Type == 5 {

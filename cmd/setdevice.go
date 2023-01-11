@@ -15,6 +15,6 @@ var setDeviceCmd = &cobra.Command{
 	Short: "Shows tui to pick active device",
 	Long:  `Allows setting or changing the active spotify device, shown in a tui`,
 	Run: func(cmd *cobra.Command, args []string) {
-		tui.DisplayDevices(ctx, client)
+		tui.StartTea(ctx, client, "devices")
 	},
 }

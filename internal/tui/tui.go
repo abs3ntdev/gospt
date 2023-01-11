@@ -11,7 +11,7 @@ import (
 )
 
 // StartTea the entry point for the UI. Initializes the model.
-func StartTea(ctx *gctx.Context, client *spotify.Client) error {
+func StartTea(ctx *gctx.Context, client *spotify.Client, mode string) error {
 	if f, err := tea.LogToFile("debug.log", "help"); err != nil {
 		return err
 	} else {
@@ -22,7 +22,7 @@ func StartTea(ctx *gctx.Context, client *spotify.Client) error {
 			}
 		}()
 	}
-	m, err := InitMain(ctx, client)
+	m, err := InitMain(ctx, client, mode)
 	if err != nil {
 		fmt.Println("UH OH")
 	}

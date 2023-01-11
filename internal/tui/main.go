@@ -3,21 +3,35 @@ package tui
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gospt/internal/commands"
 	"gospt/internal/gctx"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/zmb3/spotify/v2"
 )
 
-var main_updates chan *mainModel
+var (
+	currentlyPlaying string
+	main_updates     chan *mainModel
+	page             = 1
+
+	docStyle = lipgloss.NewStyle().Margin(1, 2)
+)
 
 type mainItem struct {
 	Name        string
+	Duration    string
+	Artist      spotify.SimpleArtist
+	ID          spotify.ID
 	Desc        string
 	SpotifyItem any
+	Device      spotify.PlayerDevice
+	spotify.SavedTrack
 }
 
 func (i mainItem) Title() string       { return i.Name }
@@ -25,43 +39,135 @@ func (i mainItem) Description() string { return i.Desc }
 func (i mainItem) FilterValue() string { return i.Title() + i.Desc }
 
 type mainModel struct {
-	list   list.Model
-	page   int
-	ctx    *gctx.Context
-	client *spotify.Client
+	list     list.Model
+	ctx      *gctx.Context
+	client   *spotify.Client
+	mode     string
+	playlist spotify.SimplePlaylist
 }
 
 func (m mainModel) Init() tea.Cmd {
+	main_updates = make(chan *mainModel)
 	return nil
 }
 
-func (m *mainModel) LoadMoreItems() {
-	playlists, err := commands.Playlists(m.ctx, m.client, (m.page + 1))
+func (m *mainModel) Tick() {
+	ticker := time.NewTicker(5 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
+				currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
+func HandlePlay(ctx *gctx.Context, client *spotify.Client, uri *spotify.URI, pos int) {
+	var err error
+	err = commands.PlaySongInPlaylist(ctx, client, uri, pos)
 	if err != nil {
+		fmt.Println()
+		os.Exit(1)
+	}
+}
+
+func HandleRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
+	err := commands.RadioGivenSong(ctx, client, id, 0)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func (m *mainModel) LoadMoreItems() {
+	switch m.mode {
+	case "main":
+		playlists, err := commands.Playlists(m.ctx, m.client, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []list.Item{}
+		for _, playlist := range playlists.Playlists {
+			items = append(items, mainItem{
+				Name:        playlist.Name,
+				Desc:        playlist.Description,
+				SpotifyItem: playlist,
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
+	case "playlist":
+		tracks, err := commands.PlaylistTracks(m.ctx, m.client, m.playlist.ID, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []mainItem{}
+		for _, track := range tracks.Tracks {
+			items = append(items, mainItem{
+				Name:     track.Track.Name,
+				Artist:   track.Track.Artists[0],
+				Duration: track.Track.TimeDuration().Round(time.Second).String(),
+				ID:       track.Track.ID,
+				Desc:     track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
+	case "tracks":
+		tracks, err := commands.TrackList(m.ctx, m.client, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		page++
+		items := []list.Item{}
+		for _, track := range tracks.Tracks {
+			items = append(items, mainItem{
+				Name:     track.Name,
+				Artist:   track.Artists[0],
+				Duration: track.TimeDuration().Round(time.Second).String(),
+				ID:       track.ID,
+				Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
 		return
 	}
-	m.page++
-	items := []list.Item{}
-	for _, playlist := range playlists.Playlists {
-		items = append(items, mainItem{
-			Name:        playlist.Name,
-			Desc:        playlist.Description,
-			SpotifyItem: playlist,
-		})
+}
+
+func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int) {
+	err := commands.PlayLikedSongs(ctx, client, position)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
-	for _, item := range items {
-		m.list.InsertItem(len(m.list.Items())+1, item)
-	}
-	main_updates <- m
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.list.NewStatusMessage(currentlyPlaying)
 	select {
-	case msg := <-main_updates:
-		m.list.SetItems(msg.list.Items())
+	case update := <-main_updates:
+		m.list.SetItems(update.list.Items())
 	default:
 	}
-	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 {
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 && m.list.Cursor() == 0 {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
 			go m.LoadMoreItems()
@@ -69,33 +175,100 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" || msg.String() == "q" || msg.String() == "esc" {
-			return m, tea.Quit
+		if msg.String() == "d" {
+			m.mode = "devices"
+			new_items, err := DeviceView(m.ctx, m.client)
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
+			m.list.SetItems(new_items)
+			m.list.ResetSelected()
+			m.list.NewStatusMessage("Setting view to devices")
 		}
-		if msg.String() == "enter" {
-			switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
-			case spotify.SimplePlaylist:
-				playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
-				p, err := InitPlaylists(m.ctx, m.client, playlist)
+		if msg.String() == "backspace" {
+			if m.mode == "playlist" || m.mode == "tracks" || m.mode == "devices" {
+				m.mode = "main"
+				m.list.NewStatusMessage("Setting view to main")
+				new_items, err := MainView(m.ctx, m.client)
 				if err != nil {
-					return m, tea.Quit
+					fmt.Println(err.Error())
 				}
-				play := tea.NewProgram(p, tea.WithAltScreen(), tea.WithMouseCellMotion())
-				if _, err := play.Run(); err != nil {
-					return m, tea.Quit
-				}
-			case *spotify.SavedTrackPage:
-				p, err := InitSavedTracks(m.ctx, m.client)
-				if err != nil {
-					return m, tea.Quit
-				}
-				play := tea.NewProgram(p, tea.WithAltScreen(), tea.WithMouseCellMotion())
-				if _, err := play.Run(); err != nil {
-					return m, tea.Quit
-				}
+				m.list.SetItems(new_items)
+			} else {
 				return m, tea.Quit
 			}
+			m.list.ResetSelected()
+		}
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
+		}
+		if msg.String() == "enter" || msg.String() == "spacebar" {
+			switch m.mode {
+			case "main":
+				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+				case spotify.SimplePlaylist:
+					m.mode = "playlist"
+					playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
+					m.playlist = playlist
+					m.list.NewStatusMessage("Setting view to playlist " + playlist.Name)
+					new_items, err := PlaylistView(m.ctx, m.client, playlist)
+					if err != nil {
+						fmt.Println(err.Error())
+						os.Exit(1)
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				case *spotify.SavedTrackPage:
+					m.mode = "tracks"
+					m.list.NewStatusMessage("Setting view to saved tracks")
+					new_items, err := SavedTracksView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						os.Exit(1)
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+					m.list.NewStatusMessage("Setting view to tracks")
+				}
+			case "playlist":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Playing " + currentlyPlaying)
+				go HandlePlay(m.ctx, m.client, &m.playlist.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
+			case "tracks":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Playing " + currentlyPlaying)
+				go HandlePlayLikedSong(m.ctx, m.client, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
+			case "devices":
+				go HandleSetDevice(m.ctx, m.client, m.list.SelectedItem().(mainItem).Device)
+				m.list.NewStatusMessage("Setting device to " + m.list.SelectedItem().FilterValue())
+				m.mode = "main"
+				m.list.NewStatusMessage("Setting view to main")
+				new_items, err := MainView(m.ctx, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
+				m.list.SetItems(new_items)
+			}
+		}
+		if msg.String() == "ctrl+r" {
+			switch m.mode {
+			case "main":
+				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+				case spotify.SimplePlaylist:
+					m.list.NewStatusMessage("Not implemented yet")
+				case *spotify.SavedTrackPage:
+					m.list.NewStatusMessage("Not implemented yet")
+				}
+			case "playlist":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Starting radio for " + currentlyPlaying)
+				go HandleRadio(m.ctx, m.client, m.list.SelectedItem().(mainItem).ID)
+			case "tracks":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Playing " + currentlyPlaying)
+				go HandleRadio(m.ctx, m.client, m.list.SelectedItem().(mainItem).ID)
+			}
 		}
 	case tea.MouseMsg:
 		if msg.Type == 5 {
@@ -139,11 +312,12 @@ func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
 	}
 	m := mainModel{
 		list:   list.New(items, list.NewDefaultDelegate(), 0, 0),
-		page:   1,
 		ctx:    ctx,
 		client: client,
+		mode:   "main",
 	}
 	m.list.Title = "GOSPT"
+	go m.Tick()
 
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 
@@ -154,7 +328,44 @@ func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func InitMain(ctx *gctx.Context, client *spotify.Client) (tea.Model, error) {
+func PlaylistView(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) ([]list.Item, error) {
+	items := []list.Item{}
+	tracks, err := commands.PlaylistTracks(ctx, client, playlist.ID, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, track := range tracks.Tracks {
+		items = append(items, mainItem{
+			Name:     track.Track.Name,
+			Artist:   track.Track.Artists[0],
+			Duration: track.Track.TimeDuration().Round(time.Second).String(),
+			ID:       track.Track.ID,
+			Desc:     track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
+		})
+	}
+	return items, nil
+}
+
+func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	tracks, err := commands.TrackList(ctx, client, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, track := range tracks.Tracks {
+		items = append(items, mainItem{
+			Name:     track.Name,
+			Artist:   track.Artists[0],
+			Duration: track.TimeDuration().Round(time.Second).String(),
+			ID:       track.ID,
+			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+		})
+	}
+
+	return items, err
+}
+
+func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	items := []list.Item{}
 	saved_items, err := commands.TrackList(ctx, client, 1)
 	items = append(items, mainItem{
@@ -173,12 +384,68 @@ func InitMain(ctx *gctx.Context, client *spotify.Client) (tea.Model, error) {
 			SpotifyItem: playlist,
 		})
 	}
+	return items, nil
+}
+
+func InitMain(ctx *gctx.Context, client *spotify.Client, mode string) (tea.Model, error) {
+	items := []list.Item{}
+	var err error
+	switch mode {
+	case "main":
+		items, err = MainView(ctx, client)
+		if err != nil {
+			return nil, err
+		}
+	case "devices":
+		items, err = DeviceView(ctx, client)
+		if err != nil {
+			return nil, err
+		}
+	case "tracks":
+		items, err = SavedTracksView(ctx, client)
+		if err != nil {
+			return nil, err
+		}
+	}
 	m := mainModel{
 		list:   list.New(items, list.NewDefaultDelegate(), 0, 0),
-		page:   1,
 		ctx:    ctx,
 		client: client,
+		mode:   mode,
 	}
 	m.list.Title = "GOSPT"
+	go m.Tick()
+	m.list.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
+			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
+		}
+	}
 	return m, nil
+}
+
+func DeviceView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	devices, err := client.PlayerDevices(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, device := range devices {
+		items = append(items, mainItem{
+			Name:   device.Name,
+			Desc:   fmt.Sprintf("%s - active: %t", device.ID, device.Active),
+			Device: device,
+		})
+	}
+	return items, nil
+}
+
+func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.PlayerDevice) {
+	fmt.Println("WHOA")
+	var err error
+	err = commands.SetDevice(ctx, client, player)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
