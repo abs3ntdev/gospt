@@ -440,6 +440,16 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode string) (tea.Model
 	m.list.DisableQuitKeybindings()
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
+			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
+			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
+			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
+		}
+	}
+	m.list.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
