@@ -89,11 +89,29 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 }
 
 func PlaySongInPlaylist(ctx *gctx.Context, client *spotify.Client, context *spotify.URI, offset int) error {
-	err := client.PlayOpt(ctx, &spotify.PlayOptions{
+	e := client.PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
 		PlaybackContext: context,
 	})
-	return err
+	if e != nil {
+		if isNoActiveError(e) {
+			err := activateDevice(ctx, client)
+			if err != nil {
+				return err
+			}
+			err = client.PlayOpt(ctx, &spotify.PlayOptions{
+				PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
+				PlaybackContext: context,
+			})
+			err = client.Play(ctx)
+			if err != nil {
+				return err
+			}
+		} else {
+			return e
+		}
+	}
+	return nil
 }
 
 func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) error {
@@ -420,7 +438,6 @@ func Repeat(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return fmt.Errorf("Failed to get current playstate")
 	}
-	fmt.Println(state.RepeatState)
 	newState := "off"
 	if state.RepeatState == "off" {
 		newState = "context"
@@ -496,15 +513,124 @@ func isNoActiveError(err error) bool {
 	return strings.Contains(err.Error(), "No active device found")
 }
 
-func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
-	to_play := true
-	current, err := client.PlayerCurrentlyPlaying(ctx)
+func RadioFromPlaylist(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) error {
+	rand.Seed(time.Now().Unix())
+	total := playlist.Tracks.Total
+	if total == 0 {
+		return fmt.Errorf("This playlist is empty")
+	}
+	pages := (total / 50)
+	randomPage := 0
+	if pages != 0 {
+		randomPage = rand.Intn(int(pages))
+	}
+	playlistPage, err := client.GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset(randomPage*50))
 	if err != nil {
 		return err
 	}
-	if current.Item == nil || !current.Playing {
-		to_play = false
+	pageSongs := playlistPage.Items
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	seedCount := 5
+	if len(pageSongs) < seedCount {
+		seedCount = len(pageSongs)
 	}
+	seedIds := []spotify.ID{}
+	for idx, song := range pageSongs {
+		if idx >= seedCount {
+			break
+		}
+		seedIds = append(seedIds, song.Track.Track.ID)
+	}
+	return RadioGivenList(ctx, client, seedIds[:seedCount])
+}
+
+func RadioFromSavedTracks(ctx *gctx.Context, client *spotify.Client) error {
+	rand.Seed(time.Now().Unix())
+	savedSongs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(0))
+	if err != nil {
+		return err
+	}
+	if savedSongs.Total == 0 {
+		return fmt.Errorf("You have no saved songs")
+	}
+	pages := (savedSongs.Total / 50)
+	randomPage := rand.Intn(int(pages))
+	trackPage, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(randomPage*50))
+	if err != nil {
+		return err
+	}
+	pageSongs := trackPage.Tracks
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	seedCount := 4
+	seedIds := []spotify.ID{}
+	for idx, song := range pageSongs {
+		if idx >= seedCount {
+			break
+		}
+		seedIds = append(seedIds, song.ID)
+	}
+	seedIds = append(seedIds, savedSongs.Tracks[0].ID)
+	return RadioGivenList(ctx, client, seedIds)
+}
+
+func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotify.ID) error {
+	seed := spotify.Seeds{
+		Tracks: song_ids,
+	}
+	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(99))
+	if err != nil {
+		return err
+	}
+	recomendationIds := []spotify.ID{}
+	for _, song := range recomendations.Tracks {
+		recomendationIds = append(recomendationIds, song.ID)
+	}
+	err = ClearRadio(ctx, client)
+	if err != nil {
+		return err
+	}
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
+	}
+	queue := []spotify.ID{song_ids[0]}
+	queue = append(queue, recomendationIds...)
+	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
+	if err != nil {
+		return err
+	}
+	client.PlayOpt(ctx, &spotify.PlayOptions{
+		PlaybackContext: &radioPlaylist.URI,
+		PlaybackOffset: &spotify.PlaybackOffset{
+			Position: 0,
+		},
+	})
+	err = client.Repeat(ctx, "context")
+	if err != nil {
+		return err
+	}
+	for i := 0; i < 4; i++ {
+		id := rand.Intn(len(recomendationIds)-2) + 1
+		seed := spotify.Seeds{
+			Tracks: []spotify.ID{recomendationIds[id]},
+		}
+		additional_recs, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		if err != nil {
+			return err
+		}
+		additionalRecsIds := []spotify.ID{}
+		for _, song := range additional_recs.Tracks {
+			additionalRecsIds = append(additionalRecsIds, song.ID)
+		}
+		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
 	configDir, _ := os.UserConfigDir()
 	if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err == nil {
 		deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
@@ -521,7 +647,7 @@ func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
 		if err != nil {
 			return err
 		}
-		err = client.TransferPlayback(ctx, device.ID, to_play)
+		err = client.TransferPlayback(ctx, device.ID, true)
 		if err != nil {
 			return err
 		}

@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"gospt/internal/commands"
@@ -59,7 +58,9 @@ func (m *mainModel) Tick() {
 			select {
 			case <-ticker.C:
 				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
-				currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
+				if playing.Playing {
+					currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
+				}
 			case <-quit:
 				ticker.Stop()
 				return
@@ -72,16 +73,29 @@ func HandlePlay(ctx *gctx.Context, client *spotify.Client, uri *spotify.URI, pos
 	var err error
 	err = commands.PlaySongInPlaylist(ctx, client, uri, pos)
 	if err != nil {
-		fmt.Println()
-		os.Exit(1)
+		return
 	}
 }
 
 func HandleRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
 	err := commands.RadioGivenSong(ctx, client, id, 0)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return
+	}
+}
+
+func HandlePlaylistRadio(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) {
+	err := commands.RadioFromPlaylist(ctx, client, playlist)
+	if err != nil {
+		return
+	}
+}
+
+func HandleLibraryRadio(ctx *gctx.Context, client *spotify.Client) {
+	err := commands.RadioFromSavedTracks(ctx, client)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 }
 
@@ -156,7 +170,7 @@ func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int
 	err := commands.PlayLikedSongs(ctx, client, position)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 }
 
@@ -180,7 +194,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			new_items, err := DeviceView(m.ctx, m.client)
 			if err != nil {
 				fmt.Println(err.Error())
-				os.Exit(1)
+				return m, tea.Quit
 			}
 			m.list.SetItems(new_items)
 			m.list.ResetSelected()
@@ -215,7 +229,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					new_items, err := PlaylistView(m.ctx, m.client, playlist)
 					if err != nil {
 						fmt.Println(err.Error())
-						os.Exit(1)
+						return m, tea.Quit
 					}
 					m.list.SetItems(new_items)
 					m.list.ResetSelected()
@@ -225,7 +239,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					new_items, err := SavedTracksView(m.ctx, m.client)
 					if err != nil {
 						fmt.Println(err.Error())
-						os.Exit(1)
+						return m, tea.Quit
 					}
 					m.list.SetItems(new_items)
 					m.list.ResetSelected()
@@ -256,9 +270,13 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "main":
 				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 				case spotify.SimplePlaylist:
-					m.list.NewStatusMessage("Not implemented yet")
+					currentlyPlaying = m.list.SelectedItem().FilterValue()
+					m.list.NewStatusMessage("Starting radio for " + currentlyPlaying)
+					go HandlePlaylistRadio(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist))
 				case *spotify.SavedTrackPage:
-					m.list.NewStatusMessage("Not implemented yet")
+					currentlyPlaying = m.list.SelectedItem().FilterValue()
+					m.list.NewStatusMessage("Starting radio for " + currentlyPlaying)
+					go HandleLibraryRadio(m.ctx, m.client)
 				}
 			case "playlist":
 				currentlyPlaying = m.list.SelectedItem().FilterValue()
@@ -323,7 +341,7 @@ func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
 
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
-		os.Exit(1)
+		return err
 	}
 	return nil
 }
@@ -446,6 +464,6 @@ func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.P
 	err = commands.SetDevice(ctx, client, player)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 }
