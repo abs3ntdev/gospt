@@ -406,6 +406,10 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 }
 
 func InitMain(ctx *gctx.Context, client *spotify.Client, mode string) (tea.Model, error) {
+	playing, _ := client.PlayerCurrentlyPlaying(ctx)
+	if playing.Playing {
+		currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
+	}
 	items := []list.Item{}
 	var err error
 	switch mode {
