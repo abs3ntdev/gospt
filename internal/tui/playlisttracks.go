@@ -14,6 +14,8 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+var list_updates chan *playlistTracksModel
+
 type track struct {
 	Name     string
 	Duration string
@@ -37,31 +39,20 @@ type playlistTracksModel struct {
 }
 
 func (m playlistTracksModel) Init() tea.Cmd {
+	list_updates = make(chan *playlistTracksModel)
 	return nil
 }
 
 func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.list.Paginator.OnLastPage() {
+	select {
+	case msg := <-list_updates:
+		m.list.SetItems(msg.list.Items())
+	default:
+	}
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
-			tracks, err := commands.PlaylistTracks(m.ctx, m.client, m.playlist.ID, (m.page + 1))
-			if err != nil {
-				return m, tea.Quit
-			}
-			m.page++
-			items := []list.Item{}
-			for _, track := range tracks.Tracks {
-				items = append(items, item{
-					Name:     track.Track.Name,
-					Artist:   track.Track.Artists[0],
-					Duration: track.Track.TimeDuration().Round(time.Second).String(),
-					ID:       track.Track.ID,
-				})
-			}
-			for _, item := range items {
-				m.list.InsertItem(len(m.list.Items())+1, item)
-			}
-
+			go m.LoadMoreItems()
 		}
 	}
 	switch msg := msg.(type) {
@@ -113,6 +104,27 @@ func (m playlistTracksModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m playlistTracksModel) View() string {
 	return docStyle.Render(m.list.View())
+}
+
+func (m *playlistTracksModel) LoadMoreItems() {
+	tracks, err := commands.PlaylistTracks(m.ctx, m.client, m.playlist.ID, (m.page + 1))
+	if err != nil {
+		return
+	}
+	m.page++
+	items := []list.Item{}
+	for _, track := range tracks.Tracks {
+		items = append(items, item{
+			Name:     track.Track.Name,
+			Artist:   track.Track.Artists[0],
+			Duration: track.Track.TimeDuration().Round(time.Second).String(),
+			ID:       track.Track.ID,
+		})
+	}
+	for _, item := range items {
+		m.list.InsertItem(len(m.list.Items())+1, item)
+	}
+	list_updates <- m
 }
 
 func PlaylistTracks(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) error {

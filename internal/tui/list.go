@@ -15,7 +15,10 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+var (
+	track_updates chan *model
+	docStyle      = lipgloss.NewStyle().Margin(1, 2)
+)
 
 type item struct {
 	Name     string
@@ -39,30 +42,41 @@ type model struct {
 }
 
 func (m model) Init() tea.Cmd {
+	track_updates = make(chan *model)
 	return nil
 }
 
+func (m *model) LoadMoreItems() {
+	tracks, err := commands.TrackList(m.ctx, m.client, (m.page + 1))
+	if err != nil {
+		return
+	}
+	m.page++
+	items := []list.Item{}
+	for _, track := range tracks.Tracks {
+		items = append(items, item{
+			Name:     track.Name,
+			Artist:   track.Artists[0],
+			Duration: track.TimeDuration().Round(time.Second).String(),
+			ID:       track.ID,
+		})
+	}
+	for _, item := range items {
+		m.list.InsertItem(len(m.list.Items())+1, item)
+	}
+	track_updates <- m
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.list.Paginator.OnLastPage() {
+	select {
+	case msg := <-track_updates:
+		m.list.SetItems(msg.list.Items())
+	default:
+	}
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
-			tracks, err := commands.TrackList(m.ctx, m.client, (m.page + 1))
-			if err != nil {
-				return m, tea.Quit
-			}
-			m.page++
-			items := []list.Item{}
-			for _, track := range tracks.Tracks {
-				items = append(items, item{
-					Name:     track.Name,
-					Artist:   track.Artists[0],
-					Duration: track.TimeDuration().Round(time.Second).String(),
-					ID:       track.ID,
-				})
-			}
-			for _, item := range items {
-				m.list.InsertItem(len(m.list.Items())+1, item)
-			}
+			go m.LoadMoreItems()
 		}
 	}
 	switch msg := msg.(type) {

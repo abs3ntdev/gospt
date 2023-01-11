@@ -12,6 +12,8 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+var main_updates chan *mainModel
+
 type mainItem struct {
 	Name        string
 	Desc        string
@@ -33,26 +35,36 @@ func (m mainModel) Init() tea.Cmd {
 	return nil
 }
 
+func (m *mainModel) LoadMoreItems() {
+	playlists, err := commands.Playlists(m.ctx, m.client, (m.page + 1))
+	if err != nil {
+		return
+	}
+	m.page++
+	items := []list.Item{}
+	for _, playlist := range playlists.Playlists {
+		items = append(items, mainItem{
+			Name:        playlist.Name,
+			Desc:        playlist.Description,
+			SpotifyItem: playlist,
+		})
+	}
+	for _, item := range items {
+		m.list.InsertItem(len(m.list.Items())+1, item)
+	}
+	main_updates <- m
+}
+
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.list.Paginator.OnLastPage() {
-		// if the last request was not full
+	select {
+	case msg := <-main_updates:
+		m.list.SetItems(msg.list.Items())
+	default:
+	}
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 {
+		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
-			playlists, err := commands.Playlists(m.ctx, m.client, (m.page + 1))
-			if err != nil {
-				return m, tea.Quit
-			}
-			m.page++
-			items := []list.Item{}
-			for _, playlist := range playlists.Playlists {
-				items = append(items, mainItem{
-					Name:        playlist.Name,
-					Desc:        playlist.Description,
-					SpotifyItem: playlist,
-				})
-			}
-			for _, item := range items {
-				m.list.InsertItem(len(m.list.Items())+1, item)
-			}
+			go m.LoadMoreItems()
 		}
 	}
 	switch msg := msg.(type) {
