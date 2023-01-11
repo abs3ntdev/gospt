@@ -25,9 +25,18 @@ then
 to use add your information to ~/.config/gospt/client.yml like this
 
 ```
-client_id: ID
-client_secret: SECRET
+client_id: "idgoeshere"
+client_secret: "secretgoeshere"
+port: "8888"
 ```
+if you dont want to store your secret in the file in plaintext you can use a command to retreive it:
+
+```
+client_secret_cmd: "secret spotify_secret"
+```
+
+you should have either client_secret or client_secret_cmd
+
 
 then run
 

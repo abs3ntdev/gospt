@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"gospt/internal/config"
@@ -25,17 +26,17 @@ var (
 )
 
 func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
-	if config.Values.ClientId == "" || config.Values.ClientSecret == "" {
+	if config.Values.ClientId == "" || config.Values.ClientSecret == "" || config.Values.Port == "" {
 		configDir, _ := os.UserConfigDir()
 		fmt.Println("PLEASE WRITE YOUR CONFIG FILE IN", filepath.Join(configDir, "gospt/client.yml"))
 		fmt.Println("GO HERE TO AND MAKE AN APPLICATION: https://developer.spotify.com/dashboard/applications")
-		fmt.Println("\nclient_id: \"idgoesherelikethis\"\nclient_secret: \"secretgoesherelikethis\"")
+		fmt.Print("\nclient_id: \"idgoesherelikethis\"\nclient_secret: \"secretgoesherelikethis\"\nport:\"8888\"\n\n")
 		return nil, fmt.Errorf("\nINVALID CONFIG")
 	}
 	auth = spotifyauth.New(
 		spotifyauth.WithClientID(config.Values.ClientId),
 		spotifyauth.WithClientSecret(config.Values.ClientSecret),
-		spotifyauth.WithRedirectURL("http://localhost:1024/callback"),
+		spotifyauth.WithRedirectURL(fmt.Sprintf("http://localhost:%s/callback", config.Values.Port)),
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeImageUpload,
 			spotifyauth.ScopePlaylistReadPrivate,
@@ -102,14 +103,15 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 		log.Println("Got request for:", r.URL.String())
 	})
 	go func() {
-		err := http.ListenAndServe(":1024", nil)
+		err := http.ListenAndServe(fmt.Sprintf(":%s", config.Values.Port), nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 	url := auth.AuthURL(state)
-	fmt.Println("GO HERE", url)
-
+	fmt.Println(url)
+	cmd := exec.Command("xdg-open", url)
+	cmd.Start()
 	// wait for auth to complete
 	client := <-ch
 
