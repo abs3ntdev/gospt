@@ -35,6 +35,19 @@ func Play(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
+func DeviceActive(ctx *gctx.Context, client *spotify.Client) bool {
+	current, err := client.PlayerDevices(ctx)
+	if err != nil {
+		return false
+	}
+	for _, dev := range current {
+		if dev.Active {
+			return true
+		}
+	}
+	return false
+}
+
 func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	url, err := url.Parse(args[0])
 	if err != nil {
