@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"log"
 
 	"gospt/internal/gctx"
 
@@ -12,16 +11,6 @@ import (
 
 // StartTea the entry point for the UI. Initializes the model.
 func StartTea(ctx *gctx.Context, client *spotify.Client, mode string) error {
-	if f, err := tea.LogToFile("debug.log", "help"); err != nil {
-		return err
-	} else {
-		defer func() {
-			err = f.Close()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}()
-	}
 	m, err := InitMain(ctx, client, mode)
 	if err != nil {
 		fmt.Println("UH OH")

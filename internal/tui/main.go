@@ -200,7 +200,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.ResetSelected()
 			m.list.NewStatusMessage("Setting view to devices")
 		}
-		if msg.String() == "backspace" {
+		if msg.String() == "backspace" || msg.String() == "esc" {
 			if m.mode == "playlist" || m.mode == "tracks" || m.mode == "devices" {
 				m.mode = "main"
 				m.list.NewStatusMessage("Setting view to main")
@@ -214,7 +214,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.list.ResetSelected()
 		}
-		if msg.String() == "ctrl+c" {
+		if msg.String() == "ctrl+c" || msg.String() == "q" {
 			return m, tea.Quit
 		}
 		if msg.String() == "enter" || msg.String() == "spacebar" {
@@ -437,6 +437,7 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode string) (tea.Model
 	}
 	m.list.Title = "GOSPT"
 	go m.Tick()
+	m.list.DisableQuitKeybindings()
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
