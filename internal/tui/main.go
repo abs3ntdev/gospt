@@ -200,7 +200,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.ResetSelected()
 			m.list.NewStatusMessage("Setting view to devices")
 		}
-		if msg.String() == "backspace" || msg.String() == "esc" {
+		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
 			if m.mode == "playlist" || m.mode == "tracks" || m.mode == "devices" {
 				m.mode = "main"
 				m.list.NewStatusMessage("Setting view to main")
@@ -214,7 +214,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.list.ResetSelected()
 		}
-		if msg.String() == "ctrl+c" || msg.String() == "q" {
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
 		if msg.String() == "enter" || msg.String() == "spacebar" {
