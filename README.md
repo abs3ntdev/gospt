@@ -22,7 +22,8 @@ then
 
 ```sudo make install```
 
-to use add your information to ~/.config/gospt/client.yml like this
+go here https://developer.spotify.com/dashboard/applications to make a spotify application. you will need a client ID and a client secret.
+add your information to ~/.config/gospt/client.yml like this
 
 ```
 client_id: "idgoeshere"
