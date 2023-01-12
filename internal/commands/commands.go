@@ -188,7 +188,12 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.I
 		return err
 	}
 	queue := []spotify.ID{song_id}
-	queue = append(queue, recomendationIds...)
+	all_recs := map[spotify.ID]bool{}
+	all_recs[song_id] = true
+	for _, rec := range recomendationIds {
+		all_recs[rec] = true
+		queue = append(queue, rec)
+	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
 		return err
@@ -607,7 +612,12 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 		return err
 	}
 	queue := []spotify.ID{song_ids[0]}
-	queue = append(queue, recomendationIds...)
+	all_recs := map[spotify.ID]bool{}
+	all_recs[song_ids[0]] = true
+	for _, rec := range recomendationIds {
+		all_recs[rec] = true
+		queue = append(queue, rec)
+	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
 		return err
@@ -633,7 +643,11 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 		}
 		additionalRecsIds := []spotify.ID{}
 		for _, song := range additional_recs.Tracks {
-			additionalRecsIds = append(additionalRecsIds, song.ID)
+			if _, ok := all_recs[song.ID]; !ok {
+				all_recs[song.ID] = true
+				additionalRecsIds = append(additionalRecsIds, song.ID)
+				queue = append(queue, song.ID)
+			}
 		}
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
