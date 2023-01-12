@@ -15,11 +15,11 @@ import (
 )
 
 var (
+	P                *tea.Program
+	DocStyle         = lipgloss.NewStyle().Margin(0, 2)
 	currentlyPlaying string
 	main_updates     chan *mainModel
 	page             = 1
-
-	docStyle = lipgloss.NewStyle().Margin(1, 2)
 )
 
 type mainItem struct {
@@ -29,8 +29,6 @@ type mainItem struct {
 	ID          spotify.ID
 	Desc        string
 	SpotifyItem any
-	Device      spotify.PlayerDevice
-	spotify.SavedTrack
 }
 
 func (i mainItem) Title() string       { return i.Name }
@@ -93,6 +91,24 @@ func HandlePlaylistRadio(ctx *gctx.Context, client *spotify.Client, playlist spo
 
 func HandleLibraryRadio(ctx *gctx.Context, client *spotify.Client) {
 	err := commands.RadioFromSavedTracks(ctx, client)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+}
+
+func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int) {
+	err := commands.PlayLikedSongs(ctx, client, position)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+}
+
+func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.PlayerDevice) {
+	fmt.Println("WHOA")
+	var err error
+	err = commands.SetDevice(ctx, client, player)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -162,14 +178,6 @@ func (m *mainModel) LoadMoreItems() {
 			m.list.InsertItem(len(m.list.Items())+1, item)
 		}
 		main_updates <- m
-		return
-	}
-}
-
-func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int) {
-	err := commands.PlayLikedSongs(ctx, client, position)
-	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 }
@@ -254,7 +262,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.list.NewStatusMessage("Playing " + currentlyPlaying)
 				go HandlePlayLikedSong(m.ctx, m.client, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 			case "devices":
-				go HandleSetDevice(m.ctx, m.client, m.list.SelectedItem().(mainItem).Device)
+				go HandleSetDevice(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.PlayerDevice))
 				m.list.NewStatusMessage("Setting device to " + m.list.SelectedItem().FilterValue())
 				m.mode = "main"
 				m.list.NewStatusMessage("Setting view to main")
@@ -296,7 +304,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.CursorDown()
 		}
 	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
+		h, v := DocStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 	}
 
@@ -306,7 +314,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) View() string {
-	return docStyle.Render(m.list.View())
+	return DocStyle.Render(m.list.View())
 }
 
 func DisplayMain(ctx *gctx.Context, client *spotify.Client) error {
@@ -379,7 +387,6 @@ func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, er
 			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
 		})
 	}
-
 	return items, err
 }
 
@@ -465,20 +472,10 @@ func DeviceView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 	}
 	for _, device := range devices {
 		items = append(items, mainItem{
-			Name:   device.Name,
-			Desc:   fmt.Sprintf("%s - active: %t", device.ID, device.Active),
-			Device: device,
+			Name:        device.Name,
+			Desc:        fmt.Sprintf("%s - active: %t", device.ID, device.Active),
+			SpotifyItem: device,
 		})
 	}
 	return items, nil
-}
-
-func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.PlayerDevice) {
-	fmt.Println("WHOA")
-	var err error
-	err = commands.SetDevice(ctx, client, player)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
 }
