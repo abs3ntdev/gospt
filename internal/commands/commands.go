@@ -64,6 +64,14 @@ func ArtistAlbums(ctx *gctx.Context, client *spotify.Client, artist spotify.ID, 
 	return albums, nil
 }
 
+func Search(ctx *gctx.Context, client *spotify.Client, search string, page int) (*spotify.SearchResult, error) {
+	result, err := client.Search(ctx, search, spotify.SearchTypeAlbum|spotify.SearchTypeArtist|spotify.SearchTypeTrack|spotify.SearchTypePlaylist, spotify.Limit(50), spotify.Offset((page-1)*50))
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func AlbumTracks(ctx *gctx.Context, client *spotify.Client, album spotify.ID, page int) (*spotify.SimpleTrackPage, error) {
 	tracks, err := client.GetAlbumTracks(ctx, album, spotify.Limit(50), spotify.Offset((page-1)*50), spotify.Market(spotify.CountryUSA))
 	if err != nil {

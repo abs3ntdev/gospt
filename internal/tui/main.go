@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zmb3/spotify/v2"
@@ -36,12 +37,14 @@ func (i mainItem) FilterValue() string { return i.Title() + i.Desc }
 
 type mainModel struct {
 	list       list.Model
+	input      textinput.Model
 	ctx        *gctx.Context
 	client     *spotify.Client
 	mode       string
 	playlist   spotify.SimplePlaylist
 	artist     spotify.SimpleArtist
 	album      spotify.SimpleAlbum
+	search     string
 	fromArtist bool
 }
 
@@ -70,10 +73,14 @@ func (m *mainModel) Tick() {
 }
 
 func (m mainModel) View() string {
-	return DocStyle.Render(m.list.View())
+	if m.input.Focused() {
+		return DocStyle.Render(m.list.View() + "\n" + m.input.View())
+	}
+	return DocStyle.Render(m.list.View() + "\n")
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	search := false
 	m.list.NewStatusMessage(currentlyPlaying)
 	select {
 	case update := <-main_updates:
@@ -88,19 +95,54 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "d" {
-			m.mode = "devices"
-			new_items, err := DeviceView(m.ctx, m.client)
-			if err != nil {
-				fmt.Println(err.Error())
-				return m, tea.Quit
+		if m.input.Focused() {
+			if msg.String() == "enter" {
+				m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
+				items, err := SearchView(m.ctx, m.client, m.input.Value())
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.search = m.input.Value()
+				m.list.SetItems(items)
+				m.list.ResetSelected()
+				m.input.SetValue("")
+				m.input.Blur()
+				search = true
 			}
-			m.list.SetItems(new_items)
-			m.list.ResetSelected()
-			m.list.NewStatusMessage("Setting view to devices")
+			m.input, _ = m.input.Update(msg)
+		}
+		if msg.String() == "s" {
+			m.input.Focus()
+		}
+		if msg.String() == "d" {
+			if !m.input.Focused() {
+				m.mode = "devices"
+				new_items, err := DeviceView(m.ctx, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+				m.list.NewStatusMessage("Setting view to devices")
+			}
 		}
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
-			if m.mode == "album" {
+			if m.input.Focused() {
+				if msg.String() == "esc" {
+					m.input.SetValue("")
+					m.input.Blur()
+					m.list.SetShowPagination(true)
+					m.mode = "main"
+					m.list.NewStatusMessage("Setting view to main")
+					new_items, err := MainView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
+					m.list.SetItems(new_items)
+				}
+			} else if m.mode == "album" {
 				if m.fromArtist {
 					m.mode = "albums"
 					m.fromArtist = true
@@ -163,6 +205,51 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == "enter" || msg.String() == "spacebar" {
 			switch m.mode {
+			case "search":
+				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+				case *spotify.FullArtistPage:
+					m.mode = "searchartists"
+					m.list.NewStatusMessage("Setting view to artists")
+					new_items, err := SearchArtistsView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullArtistPage))
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				case *spotify.SimpleAlbumPage:
+					m.mode = "searchalbums"
+					m.list.NewStatusMessage("Setting view to albums")
+					new_items, err := SearchAlbumsView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimpleAlbumPage))
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				case *spotify.SimplePlaylistPage:
+					m.mode = "searchplaylist"
+					playlists := m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimplePlaylistPage)
+					m.list.NewStatusMessage("Setting view to playlist")
+					new_items, err := SearchPlaylistsView(m.ctx, m.client, playlists)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				case *spotify.FullTrackPage:
+					m.mode = "searchtracks"
+					m.list.NewStatusMessage("Setting view to tracks")
+					new_items, err := SearchTracksView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullTrackPage))
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+					m.list.NewStatusMessage("Setting view to tracks")
+				}
 			case "main":
 				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 				case *spotify.FullArtistCursorPage:
@@ -296,9 +383,11 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		h, v := DocStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width-h, msg.Height-v-1)
 	}
-
+	if search {
+		m.mode = "search"
+	}
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
 	return m, cmd
@@ -353,5 +442,11 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode string) (tea.Model
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
 	}
+	input := textinput.New()
+	input.Prompt = "$ "
+	input.Placeholder = "Search..."
+	input.CharLimit = 250
+	input.Width = 50
+	m.input = input
 	return m, nil
 }

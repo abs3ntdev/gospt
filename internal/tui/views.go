@@ -63,6 +63,49 @@ func ArtistsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error)
 	return items, nil
 }
 
+func SearchArtistsView(ctx *gctx.Context, client *spotify.Client, artists *spotify.FullArtistPage) ([]list.Item, error) {
+	items := []list.Item{}
+	for _, artist := range artists.Artists {
+		items = append(items, mainItem{
+			Name:        artist.Name,
+			ID:          artist.ID,
+			Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			SpotifyItem: artist.SimpleArtist,
+		})
+	}
+	return items, nil
+}
+
+func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]list.Item, error) {
+	items := []list.Item{}
+
+	result, err := commands.Search(ctx, client, search, 1)
+	if err != nil {
+		return nil, err
+	}
+	items = append(items, mainItem{
+		Name:        "Tracks",
+		Desc:        "Search results",
+		SpotifyItem: result.Tracks,
+	})
+	items = append(items, mainItem{
+		Name:        "Albums",
+		Desc:        "Search results",
+		SpotifyItem: result.Albums,
+	})
+	items = append(items, mainItem{
+		Name:        "Artists",
+		Desc:        "Search results",
+		SpotifyItem: result.Artists,
+	})
+	items = append(items, mainItem{
+		Name:        "Playlists",
+		Desc:        "Search results",
+		SpotifyItem: result.Playlists,
+	})
+	return items, nil
+}
+
 func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	items := []list.Item{}
 	albums, err := commands.UserAlbums(ctx, client, 1)
@@ -75,6 +118,31 @@ func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 			ID:          album.ID,
 			Desc:        fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
 			SpotifyItem: album.SimpleAlbum,
+		})
+	}
+	return items, nil
+}
+
+func SearchPlaylistsView(ctx *gctx.Context, client *spotify.Client, playlists *spotify.SimplePlaylistPage) ([]list.Item, error) {
+	items := []list.Item{}
+	for _, playlist := range playlists.Playlists {
+		items = append(items, mainItem{
+			Name:        playlist.Name,
+			Desc:        playlist.Description,
+			SpotifyItem: playlist,
+		})
+	}
+	return items, nil
+}
+
+func SearchAlbumsView(ctx *gctx.Context, client *spotify.Client, albums *spotify.SimpleAlbumPage) ([]list.Item, error) {
+	items := []list.Item{}
+	for _, album := range albums.Albums {
+		items = append(items, mainItem{
+			Name:        album.Name,
+			ID:          album.ID,
+			Desc:        fmt.Sprintf("%s, %d", album.Artists[0].Name, album.ReleaseDateTime()),
+			SpotifyItem: album,
 		})
 	}
 	return items, nil
@@ -113,6 +181,20 @@ func AlbumTracksView(ctx *gctx.Context, album spotify.ID, client *spotify.Client
 		})
 	}
 	return items, err
+}
+
+func SearchTracksView(ctx *gctx.Context, client *spotify.Client, tracks *spotify.FullTrackPage) ([]list.Item, error) {
+	items := []list.Item{}
+	for _, track := range tracks.Tracks {
+		items = append(items, mainItem{
+			Name:     track.Name,
+			Artist:   track.Artists[0],
+			Duration: track.TimeDuration().Round(time.Second).String(),
+			ID:       track.ID,
+			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+		})
+	}
+	return items, nil
 }
 
 func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
