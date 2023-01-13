@@ -41,6 +41,7 @@ func HandleAlbumArtist(ctx *gctx.Context, client *spotify.Client, id spotify.ID)
 func HandlePlaylistRadio(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) {
 	err := commands.RadioFromPlaylist(ctx, client, playlist)
 	if err != nil {
+		fmt.Println("AHHHHHHHHHHHHHHHHHH", err.Error())
 		return
 	}
 }

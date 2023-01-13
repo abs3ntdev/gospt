@@ -643,7 +643,7 @@ func RadioFromPlaylist(ctx *gctx.Context, client *spotify.Client, playlist spoti
 	if pages != 0 {
 		randomPage = rand.Intn(int(pages-1)) + 1
 	}
-	playlistPage, err := client.GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset(randomPage*50))
+	playlistPage, err := client.GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
 		return err
 	}
