@@ -205,6 +205,45 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == "enter" || msg.String() == "spacebar" {
 			switch m.mode {
+			case "searchartists":
+				m.mode = "albums"
+				m.fromArtist = true
+				m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
+				m.list.NewStatusMessage("Opening " + m.artist.Name)
+				new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+			case "searchalbums":
+				m.mode = "album"
+				m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
+				m.list.NewStatusMessage("Opening " + m.album.Name)
+				new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+			case "searchplaylists":
+				m.mode = "playlist"
+				playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
+				m.playlist = playlist
+				m.list.NewStatusMessage("Setting view to playlist " + playlist.Name)
+				new_items, err := PlaylistView(m.ctx, m.client, playlist)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+			case "searchtracks":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Playing " + currentlyPlaying)
+				go HandleRadio(m.ctx, m.client, m.list.SelectedItem().(mainItem).ID)
 			case "search":
 				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 				case *spotify.FullArtistPage:
@@ -228,7 +267,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.SetItems(new_items)
 					m.list.ResetSelected()
 				case *spotify.SimplePlaylistPage:
-					m.mode = "searchplaylist"
+					m.mode = "searchplaylists"
 					playlists := m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimplePlaylistPage)
 					m.list.NewStatusMessage("Setting view to playlist")
 					new_items, err := SearchPlaylistsView(m.ctx, m.client, playlists)
