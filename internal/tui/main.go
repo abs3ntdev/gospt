@@ -37,13 +37,14 @@ func (i mainItem) Description() string { return i.Desc }
 func (i mainItem) FilterValue() string { return i.Title() + i.Desc }
 
 type mainModel struct {
-	list     list.Model
-	ctx      *gctx.Context
-	client   *spotify.Client
-	mode     string
-	playlist spotify.SimplePlaylist
-	artist   spotify.SimpleArtist
-	album    spotify.SimpleAlbum
+	list       list.Model
+	ctx        *gctx.Context
+	client     *spotify.Client
+	mode       string
+	playlist   spotify.SimplePlaylist
+	artist     spotify.SimpleArtist
+	album      spotify.SimpleAlbum
+	fromArtist bool
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -293,7 +294,51 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.NewStatusMessage("Setting view to devices")
 		}
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
-			if m.mode != "main" {
+			if m.mode == "album" {
+				if m.fromArtist {
+					m.mode = "albums"
+					m.fromArtist = true
+					m.list.NewStatusMessage("Opening " + m.artist.Name)
+					new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				} else {
+					m.mode = "albums"
+					m.list.NewStatusMessage("Setting view to albums")
+					new_items, err := AlbumsView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				}
+			} else if m.mode == "albums" {
+				if m.fromArtist {
+					m.mode = "artists"
+					m.fromArtist = false
+					m.list.NewStatusMessage("Setting view to artists")
+					new_items, err := ArtistsView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				} else {
+					m.mode = "main"
+					m.list.NewStatusMessage("Setting view to main")
+					new_items, err := MainView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
+					m.list.SetItems(new_items)
+				}
+			} else if m.mode != "main" {
 				m.mode = "main"
 				m.list.NewStatusMessage("Setting view to main")
 				new_items, err := MainView(m.ctx, m.client)
@@ -371,6 +416,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.list.ResetSelected()
 			case "artists":
 				m.mode = "albums"
+				m.fromArtist = true
 				m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
 				m.list.NewStatusMessage("Opening " + m.artist.Name)
 				new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
@@ -655,7 +701,7 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 		SpotifyItem: albums,
 	})
 	items = append(items, mainItem{
-		Name:        "Albums",
+		Name:        "Artists",
 		Desc:        fmt.Sprintf("%d artists", artists.Total),
 		SpotifyItem: artists,
 	})
