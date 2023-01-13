@@ -42,6 +42,8 @@ type mainModel struct {
 	client   *spotify.Client
 	mode     string
 	playlist spotify.SimplePlaylist
+	artist   spotify.SimpleArtist
+	album    spotify.SimpleAlbum
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -118,6 +120,26 @@ func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.P
 
 func (m *mainModel) LoadMoreItems() {
 	switch m.mode {
+	case "artist":
+		albums, err := commands.ArtistAlbums(m.ctx, m.client, m.artist.ID, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []list.Item{}
+		for _, album := range albums.Albums {
+			items = append(items, mainItem{
+				Name:        album.Name,
+				ID:          album.ID,
+				Desc:        fmt.Sprintf("%s by %s", album.AlbumType, album.Artists[0].Name),
+				SpotifyItem: album,
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
 	case "artists":
 		artists, err := commands.UserArtists(m.ctx, m.client, (page + 1))
 		page++
@@ -131,6 +153,27 @@ func (m *mainModel) LoadMoreItems() {
 				ID:          artist.ID,
 				Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
 				SpotifyItem: artist.SimpleArtist,
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
+	case "album":
+		tracks, err := commands.AlbumTracks(m.ctx, m.client, m.album.ID, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []mainItem{}
+		for _, track := range tracks.Tracks {
+			items = append(items, mainItem{
+				Name:     track.Name,
+				Artist:   track.Artists[0],
+				Duration: track.TimeDuration().Round(time.Second).String(),
+				ID:       track.ID,
+				Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
 			})
 		}
 		for _, item := range items {
@@ -316,8 +359,31 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.NewStatusMessage("Setting view to tracks")
 				}
 			case "albums":
-				album := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
-				m.list.NewStatusMessage("Opening " + album.Name)
+				m.mode = "album"
+				m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
+				m.list.NewStatusMessage("Opening " + m.album.Name)
+				new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+			case "artists":
+				m.mode = "albums"
+				m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
+				m.list.NewStatusMessage("Opening " + m.artist.Name)
+				new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
+				if err != nil {
+					fmt.Println(err.Error())
+					return m, tea.Quit
+				}
+				m.list.SetItems(new_items)
+				m.list.ResetSelected()
+			case "album":
+				currentlyPlaying = m.list.SelectedItem().FilterValue()
+				m.list.NewStatusMessage("Playing " + currentlyPlaying)
+				go HandlePlay(m.ctx, m.client, &m.album.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.TotalPages))
 			case "playlist":
 				currentlyPlaying = m.list.SelectedItem().FilterValue()
 				m.list.NewStatusMessage("Playing " + currentlyPlaying)
@@ -469,6 +535,41 @@ func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 		})
 	}
 	return items, nil
+}
+
+func ArtistAlbumsView(ctx *gctx.Context, album spotify.ID, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	albums, err := commands.ArtistAlbums(ctx, client, album, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, album := range albums.Albums {
+		items = append(items, mainItem{
+			Name:        album.Name,
+			ID:          album.ID,
+			Desc:        fmt.Sprintf("%s by %s", album.AlbumType, album.Artists[0].Name),
+			SpotifyItem: album,
+		})
+	}
+	return items, err
+}
+
+func AlbumTracksView(ctx *gctx.Context, album spotify.ID, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	tracks, err := commands.AlbumTracks(ctx, client, album, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, track := range tracks.Tracks {
+		items = append(items, mainItem{
+			Name:     track.Name,
+			Artist:   track.Artists[0],
+			Duration: track.TimeDuration().Round(time.Second).String(),
+			ID:       track.ID,
+			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+		})
+	}
+	return items, err
 }
 
 func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
