@@ -127,9 +127,10 @@ func (m *mainModel) LoadMoreItems() {
 		items := []list.Item{}
 		for _, artist := range artists.Artists {
 			items = append(items, mainItem{
-				Name: artist.Name,
-				ID:   artist.ID,
-				Desc: fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+				Name:        artist.Name,
+				ID:          artist.ID,
+				Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+				SpotifyItem: artist.SimpleArtist,
 			})
 		}
 		for _, item := range items {
@@ -146,9 +147,10 @@ func (m *mainModel) LoadMoreItems() {
 		items := []list.Item{}
 		for _, album := range albums.Albums {
 			items = append(items, mainItem{
-				Name: album.Name,
-				ID:   album.ID,
-				Desc: fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+				Name:        album.Name,
+				ID:          album.ID,
+				Desc:        fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+				SpotifyItem: album.SimpleAlbum,
 			})
 		}
 		for _, item := range items {
@@ -313,6 +315,9 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.ResetSelected()
 					m.list.NewStatusMessage("Setting view to tracks")
 				}
+			case "albums":
+				album := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
+				m.list.NewStatusMessage("Opening " + album.Name)
 			case "playlist":
 				currentlyPlaying = m.list.SelectedItem().FilterValue()
 				m.list.NewStatusMessage("Playing " + currentlyPlaying)
@@ -440,9 +445,10 @@ func ArtistsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error)
 	}
 	for _, artist := range artists.Artists {
 		items = append(items, mainItem{
-			Name: artist.Name,
-			ID:   artist.ID,
-			Desc: fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			Name:        artist.Name,
+			ID:          artist.ID,
+			Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			SpotifyItem: artist.SimpleArtist,
 		})
 	}
 	return items, nil
@@ -456,9 +462,10 @@ func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 	}
 	for _, album := range albums.Albums {
 		items = append(items, mainItem{
-			Name: album.Name,
-			ID:   album.ID,
-			Desc: fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+			Name:        album.Name,
+			ID:          album.ID,
+			Desc:        fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+			SpotifyItem: album.SimpleAlbum,
 		})
 	}
 	return items, nil

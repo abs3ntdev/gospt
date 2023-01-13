@@ -56,6 +56,22 @@ func UserArtists(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.
 	return artists, nil
 }
 
+func ArtistAlbums(ctx *gctx.Context, client *spotify.Client, artist spotify.ID, page int) (*spotify.SimpleAlbumPage, error) {
+	albums, err := client.GetArtistAlbums(ctx, artist, []spotify.AlbumType{1, 2, 3, 4}, spotify.Market(spotify.CountryUSA), spotify.Limit(50), spotify.Offset((page-1)*50))
+	if err != nil {
+		return nil, err
+	}
+	return albums, nil
+}
+
+func AlbumTracks(ctx *gctx.Context, client *spotify.Client, album spotify.ID, page int) (*spotify.SimpleTrackPage, error) {
+	tracks, err := client.GetAlbumTracks(ctx, album, spotify.Limit(50), spotify.Offset((page-1)*50), spotify.Market(spotify.CountryUSA))
+	if err != nil {
+		return nil, err
+	}
+	return tracks, nil
+}
+
 func UserAlbums(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.SavedAlbumPage, error) {
 	albums, err := client.CurrentUsersAlbums(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 	if err != nil {
