@@ -198,6 +198,67 @@ func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) err
 	return err
 }
 
+func RadioGivenArtist(ctx *gctx.Context, client *spotify.Client, artist_id spotify.ID) error {
+	seed := spotify.Seeds{
+		Tracks: []spotify.ID{artist_id},
+	}
+	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+	if err != nil {
+		return err
+	}
+	recomendationIds := []spotify.ID{}
+	for _, song := range recomendations.Tracks {
+		recomendationIds = append(recomendationIds, song.ID)
+	}
+	err = ClearRadio(ctx, client)
+	if err != nil {
+		return err
+	}
+	radioPlaylist, err := GetRadioPlaylist(ctx, client)
+	if err != nil {
+		return err
+	}
+	queue := []spotify.ID{}
+	all_recs := map[spotify.ID]bool{}
+	for _, rec := range recomendationIds {
+		all_recs[rec] = true
+		queue = append(queue, rec)
+	}
+	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
+	if err != nil {
+		return err
+	}
+	client.PlayOpt(ctx, &spotify.PlayOptions{
+		PlaybackContext: &radioPlaylist.URI,
+		PlaybackOffset: &spotify.PlaybackOffset{
+			Position: 0,
+		},
+	})
+	err = client.Repeat(ctx, "context")
+	if err != nil {
+		return err
+	}
+	for i := 0; i < 4; i++ {
+		id := rand.Intn(len(recomendationIds)-2) + 1
+		seed := spotify.Seeds{
+			Tracks: []spotify.ID{recomendationIds[id]},
+		}
+		additional_recs, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		if err != nil {
+			return err
+		}
+		additionalRecsIds := []spotify.ID{}
+		for _, song := range additional_recs.Tracks {
+			additionalRecsIds = append(additionalRecsIds, song.ID)
+		}
+		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.ID, pos int) error {
 	start := time.Now().UnixMilli()
 	seed := spotify.Seeds{
@@ -570,9 +631,9 @@ func RadioFromPlaylist(ctx *gctx.Context, client *spotify.Client, playlist spoti
 		return fmt.Errorf("This playlist is empty")
 	}
 	pages := (total / 50)
-	randomPage := 0
+	randomPage := 1
 	if pages != 0 {
-		randomPage = rand.Intn(int(pages))
+		randomPage = rand.Intn(int(pages-1)) + 1
 	}
 	playlistPage, err := client.GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset(randomPage*50))
 	if err != nil {
@@ -590,6 +651,41 @@ func RadioFromPlaylist(ctx *gctx.Context, client *spotify.Client, playlist spoti
 			break
 		}
 		seedIds = append(seedIds, song.Track.Track.ID)
+	}
+	return RadioGivenList(ctx, client, seedIds[:seedCount])
+}
+
+func RadioFromAlbum(ctx *gctx.Context, client *spotify.Client, album spotify.ID) error {
+	rand.Seed(time.Now().Unix())
+	tracks, err := AlbumTracks(ctx, client, album, 1)
+	if err != nil {
+		return err
+	}
+	total := tracks.Total
+	if total == 0 {
+		return fmt.Errorf("This playlist is empty")
+	}
+	pages := (total / 50)
+	randomPage := 1
+	if pages != 0 {
+		randomPage = rand.Intn(int(pages-1)) + 1
+	}
+	albumTrackPage, err := AlbumTracks(ctx, client, album, randomPage)
+	if err != nil {
+		return err
+	}
+	pageSongs := albumTrackPage.Tracks
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	seedCount := 5
+	if len(pageSongs) < seedCount {
+		seedCount = len(pageSongs)
+	}
+	seedIds := []spotify.ID{}
+	for idx, song := range pageSongs {
+		if idx >= seedCount {
+			break
+		}
+		seedIds = append(seedIds, song.ID)
 	}
 	return RadioGivenList(ctx, client, seedIds[:seedCount])
 }
