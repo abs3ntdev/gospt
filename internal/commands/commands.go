@@ -35,7 +35,7 @@ func Play(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func DeviceActive(ctx *gctx.Context, client *spotify.Client) bool {
+func ActiveDeviceExists(ctx *gctx.Context, client *spotify.Client) bool {
 	current, err := client.PlayerDevices(ctx)
 	if err != nil {
 		return false
@@ -46,6 +46,22 @@ func DeviceActive(ctx *gctx.Context, client *spotify.Client) bool {
 		}
 	}
 	return false
+}
+
+func UserArtists(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.FullArtistCursorPage, error) {
+	artists, err := client.CurrentUsersFollowedArtists(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
+	if err != nil {
+		return nil, err
+	}
+	return artists, nil
+}
+
+func UserAlbums(ctx *gctx.Context, client *spotify.Client, page int) (*spotify.SavedAlbumPage, error) {
+	albums, err := client.CurrentUsersAlbums(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
+	if err != nil {
+		return nil, err
+	}
+	return albums, nil
 }
 
 func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {

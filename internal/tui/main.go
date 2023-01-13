@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"gospt/internal/commands"
@@ -117,6 +118,44 @@ func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.P
 
 func (m *mainModel) LoadMoreItems() {
 	switch m.mode {
+	case "artists":
+		artists, err := commands.UserArtists(m.ctx, m.client, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []list.Item{}
+		for _, artist := range artists.Artists {
+			items = append(items, mainItem{
+				Name: artist.Name,
+				ID:   artist.ID,
+				Desc: fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
+	case "albums":
+		albums, err := commands.UserAlbums(m.ctx, m.client, (page + 1))
+		page++
+		if err != nil {
+			return
+		}
+		items := []list.Item{}
+		for _, album := range albums.Albums {
+			items = append(items, mainItem{
+				Name: album.Name,
+				ID:   album.ID,
+				Desc: fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+			})
+		}
+		for _, item := range items {
+			m.list.InsertItem(len(m.list.Items())+1, item)
+		}
+		main_updates <- m
+		return
 	case "main":
 		playlists, err := commands.Playlists(m.ctx, m.client, (page + 1))
 		page++
@@ -209,7 +248,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.NewStatusMessage("Setting view to devices")
 		}
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
-			if m.mode == "playlist" || m.mode == "tracks" || m.mode == "devices" {
+			if m.mode != "main" {
 				m.mode = "main"
 				m.list.NewStatusMessage("Setting view to main")
 				new_items, err := MainView(m.ctx, m.client)
@@ -221,6 +260,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 			m.list.ResetSelected()
+			page = 0
 		}
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
@@ -229,6 +269,26 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.mode {
 			case "main":
 				switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+				case *spotify.FullArtistCursorPage:
+					m.mode = "artists"
+					m.list.NewStatusMessage("Setting view to artists")
+					new_items, err := ArtistsView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
+				case *spotify.SavedAlbumPage:
+					m.mode = "albums"
+					m.list.NewStatusMessage("Setting view to albums")
+					new_items, err := AlbumsView(m.ctx, m.client)
+					if err != nil {
+						fmt.Println(err.Error())
+						return m, tea.Quit
+					}
+					m.list.SetItems(new_items)
+					m.list.ResetSelected()
 				case spotify.SimplePlaylist:
 					m.mode = "playlist"
 					playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
@@ -372,6 +432,38 @@ func PlaylistView(ctx *gctx.Context, client *spotify.Client, playlist spotify.Si
 	return items, nil
 }
 
+func ArtistsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	artists, err := commands.UserArtists(ctx, client, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, artist := range artists.Artists {
+		items = append(items, mainItem{
+			Name: artist.Name,
+			ID:   artist.ID,
+			Desc: fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+		})
+	}
+	return items, nil
+}
+
+func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+	items := []list.Item{}
+	albums, err := commands.UserAlbums(ctx, client, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, album := range albums.Albums {
+		items = append(items, mainItem{
+			Name: album.Name,
+			ID:   album.ID,
+			Desc: fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+		})
+	}
+	return items, nil
+}
+
 func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	items := []list.Item{}
 	tracks, err := commands.TrackList(ctx, client, 1)
@@ -391,17 +483,74 @@ func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, er
 }
 
 func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+	var wg sync.WaitGroup
+	var saved_items *spotify.SavedTrackPage
+	var playlists *spotify.SimplePlaylistPage
+	var artists *spotify.FullArtistCursorPage
+	var albums *spotify.SavedAlbumPage
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		saved_items, err = commands.TrackList(ctx, client, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		playlists, err = commands.Playlists(ctx, client, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		artists, err = commands.UserArtists(ctx, client, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		albums, err = commands.UserAlbums(ctx, client, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}()
+
+	wg.Wait()
+
 	items := []list.Item{}
-	saved_items, err := commands.TrackList(ctx, client, 1)
 	items = append(items, mainItem{
 		Name:        "Saved Tracks",
 		Desc:        fmt.Sprintf("%d saved songs", saved_items.Total),
 		SpotifyItem: saved_items,
 	})
-	playlists, err := commands.Playlists(ctx, client, 1)
-	if err != nil {
-		return nil, err
-	}
+	items = append(items, mainItem{
+		Name:        "Albums",
+		Desc:        fmt.Sprintf("%d albums", albums.Total),
+		SpotifyItem: albums,
+	})
+	items = append(items, mainItem{
+		Name:        "Albums",
+		Desc:        fmt.Sprintf("%d artists", artists.Total),
+		SpotifyItem: artists,
+	})
 	for _, playlist := range playlists.Playlists {
 		items = append(items, mainItem{
 			Name:        playlist.Name,

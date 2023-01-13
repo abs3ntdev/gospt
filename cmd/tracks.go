@@ -20,7 +20,7 @@ var tracksCmd = &cobra.Command{
 	Long:  `Uses TUI to open a list of saved tracks`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configDir, _ := os.UserConfigDir()
-		if commands.DeviceActive(ctx, client) {
+		if commands.ActiveDeviceExists(ctx, client) {
 			return tui.StartTea(ctx, client, "tracks")
 		}
 		if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err != nil {
