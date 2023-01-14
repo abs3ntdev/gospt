@@ -45,6 +45,11 @@ func Execute(defCmd string) {
 }
 
 func init() {
+	if len(os.Args) > 1 {
+		if os.Args[1] == "completion" || os.Args[1] == "__complete" {
+			return
+		}
+	}
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initClient)
 }
