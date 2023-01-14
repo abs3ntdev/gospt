@@ -6,7 +6,9 @@ This project is still under heavy development and some things might not work or 
 
 Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 ---
-![picture](https://gitea.asdf.cafe/abs3nt/gospt/raw/commit/919e6b4d029e3bf1a3f262991cd0d72c6c8ee1d3/assets/gospt.png)
+![picture](/assets/gospt.png)
+![video](/assets/gospt.mp4)
+
 
 to install:
 
