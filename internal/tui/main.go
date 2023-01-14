@@ -79,8 +79,31 @@ func (m mainModel) View() string {
 	return DocStyle.Render(m.list.View() + "\n")
 }
 
+func (m *mainModel) Typing(msg tea.KeyMsg) (bool, tea.Cmd) {
+	if msg.String() == "enter" {
+		m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
+		items, err := SearchView(m.ctx, m.client, m.input.Value())
+		if err != nil {
+			fmt.Println(err.Error())
+			return false, tea.Quit
+		}
+		m.search = m.input.Value()
+		m.list.SetItems(items)
+		m.list.ResetSelected()
+		m.input.SetValue("")
+		m.input.Blur()
+		return true, nil
+	}
+	if msg.String() == "esc" {
+		m.input.SetValue("")
+		m.input.Blur()
+		return false, nil
+	}
+	m.input, _ = m.input.Update(msg)
+	return false, nil
+}
+
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	search := false
 	m.list.NewStatusMessage(currentlyPlaying)
 	select {
 	case update := <-main_updates:
@@ -95,22 +118,15 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
 		if m.input.Focused() {
-			if msg.String() == "enter" {
-				m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
-				items, err := SearchView(m.ctx, m.client, m.input.Value())
-				if err != nil {
-					fmt.Println(err.Error())
-					return m, tea.Quit
-				}
-				m.search = m.input.Value()
-				m.list.SetItems(items)
-				m.list.ResetSelected()
-				m.input.SetValue("")
-				m.input.Blur()
-				search = true
+			search, cmd := m.Typing(msg)
+			if search {
+				m.mode = "search"
 			}
-			m.input, _ = m.input.Update(msg)
+			return m, cmd
 		}
 		if msg.String() == "s" {
 			m.input.Focus()
@@ -129,20 +145,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
-			if m.input.Focused() {
-				if msg.String() == "esc" {
-					m.input.SetValue("")
-					m.input.Blur()
-					m.list.SetShowPagination(true)
-					m.mode = "main"
-					m.list.NewStatusMessage("Setting view to main")
-					new_items, err := MainView(m.ctx, m.client)
-					if err != nil {
-						fmt.Println(err.Error())
-					}
-					m.list.SetItems(new_items)
-				}
-			} else if m.mode == "album" {
+			if m.mode == "album" {
 				if m.fromArtist {
 					m.mode = "albums"
 					m.fromArtist = true
@@ -199,9 +202,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.list.ResetSelected()
 			page = 0
-		}
-		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
 		}
 		if msg.String() == "enter" || msg.String() == "spacebar" {
 			switch m.mode {
@@ -423,9 +423,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := DocStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v-1)
-	}
-	if search {
-		m.mode = "search"
 	}
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
