@@ -499,7 +499,7 @@ func Unlike(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func Skip(ctx *gctx.Context, client *spotify.Client) error {
+func Next(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Next(ctx)
 	if err != nil {
 		return err

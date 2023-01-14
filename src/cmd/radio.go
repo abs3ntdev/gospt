@@ -11,9 +11,10 @@ func init() {
 }
 
 var radioCmd = &cobra.Command{
-	Use:   "radio",
-	Short: "Starts radio",
-	Long:  `Starts radio`,
+	Use:     "radio",
+	Aliases: []string{"r"},
+	Short:   "Starts radio",
+	Long:    `Starts radio`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return commands.Radio(ctx, client)
 	},

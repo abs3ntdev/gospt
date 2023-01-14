@@ -11,9 +11,10 @@ func init() {
 }
 
 var likeCmd = &cobra.Command{
-	Use:   "like",
-	Short: "Likes song",
-	Long:  `Likes song`,
+	Use:     "like",
+	Aliases: []string{"l"},
+	Short:   "Likes song",
+	Long:    `Likes song`,
 	Run: func(cmd *cobra.Command, args []string) {
 		commands.Like(ctx, client)
 	},
