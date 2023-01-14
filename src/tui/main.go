@@ -120,7 +120,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 			fmt.Println(err.Error())
 		}
 		m.list.SetItems(new_items)
-
 	case Album:
 		m.mode = Albums
 		m.list.NewStatusMessage("Setting view to albums")
@@ -130,8 +129,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 			return nil, err
 		}
 		m.list.SetItems(new_items)
-		m.list.ResetSelected()
-
 	case Artist:
 		m.mode = Artists
 		m.list.NewStatusMessage("Setting view to artists")
@@ -140,8 +137,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 			return nil, err
 		}
 		m.list.SetItems(new_items)
-		m.list.ResetSelected()
-
 	case ArtistAlbum:
 		m.mode = Artist
 		m.list.NewStatusMessage("Opening " + m.artist.Name)
@@ -150,8 +145,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 			return nil, err
 		}
 		m.list.SetItems(new_items)
-		m.list.ResetSelected()
-
 	case SearchArtists, SearchTracks, SearchAlbums, SearchPlaylists:
 		m.mode = Search
 		m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
@@ -177,7 +170,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 			return nil, err
 		}
 		m.list.SetItems(new_items)
-		m.list.ResetSelected()
 	case SearchAlbum:
 		m.mode = SearchAlbums
 		m.list.NewStatusMessage("Setting view to albums")
@@ -195,7 +187,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		}
 		m.list.SetItems(new_items)
 	default:
-		m.list.ResetSelected()
 		page = 0
 	}
 	return nil, nil
@@ -496,6 +487,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				fmt.Println(err)
 			}
+			m.list.ResetSelected()
 			return m, msg
 		}
 
