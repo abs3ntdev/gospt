@@ -7,7 +7,7 @@ This project is still under heavy development and some things might not work or 
 Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 ---
 ![picture](/assets/gospt.png)
-![video](/assets/gospt.mp4)
+![video](/assets/gost.webm)
 
 
 to install:
