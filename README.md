@@ -22,7 +22,7 @@ then
 
 ```sudo make install```
 
-go here https://developer.spotify.com/dashboard/applications to make a spotify application. you will need a client ID and a client secret. Set your callback url like this:
+go here https://developer.spotify.com/dashboard/applications to make a spotify application. you will need a client ID and a client secret. Set your redirect uri like this:
 
 ```http://localhost:8888/callback```
 
