@@ -11,9 +11,10 @@ func init() {
 }
 
 var unlikeCmd = &cobra.Command{
-	Use:   "unlike",
-	Short: "unlikes song",
-	Long:  `unlikes song`,
+	Use:     "unlike",
+	Aliases: []string{"u"},
+	Short:   "unlikes song",
+	Long:    `unlikes song`,
 	Run: func(cmd *cobra.Command, args []string) {
 		commands.Unlike(ctx, client)
 	},
