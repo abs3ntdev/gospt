@@ -1,6 +1,8 @@
 package main
 
-import "gospt/cmd"
+import (
+	"gospt/src/cmd"
+)
 
 func main() {
 	defCmd := "tui"
