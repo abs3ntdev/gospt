@@ -76,12 +76,12 @@ func SearchArtistsView(ctx *gctx.Context, client *spotify.Client, artists *spoti
 	return items, nil
 }
 
-func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]list.Item, error) {
+func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]list.Item, *SearchResults, error) {
 	items := []list.Item{}
 
 	result, err := commands.Search(ctx, client, search, 1)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	items = append(items, mainItem{
 		Name:        "Tracks",
@@ -103,7 +103,13 @@ func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]lis
 		Desc:        "Search results",
 		SpotifyItem: result.Playlists,
 	})
-	return items, nil
+	results := &SearchResults{
+		Tracks:    result.Tracks,
+		Playlists: result.Playlists,
+		Albums:    result.Albums,
+		Artists:   result.Artists,
+	}
+	return items, results, nil
 }
 
 func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
@@ -173,11 +179,12 @@ func AlbumTracksView(ctx *gctx.Context, album spotify.ID, client *spotify.Client
 	}
 	for _, track := range tracks.Tracks {
 		items = append(items, mainItem{
-			Name:     track.Name,
-			Artist:   track.Artists[0],
-			Duration: track.TimeDuration().Round(time.Second).String(),
-			ID:       track.ID,
-			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+			Name:        track.Name,
+			Artist:      track.Artists[0],
+			Duration:    track.TimeDuration().Round(time.Second).String(),
+			ID:          track.ID,
+			SpotifyItem: track,
+			Desc:        track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
 		})
 	}
 	return items, err
@@ -187,11 +194,12 @@ func SearchTracksView(ctx *gctx.Context, client *spotify.Client, tracks *spotify
 	items := []list.Item{}
 	for _, track := range tracks.Tracks {
 		items = append(items, mainItem{
-			Name:     track.Name,
-			Artist:   track.Artists[0],
-			Duration: track.TimeDuration().Round(time.Second).String(),
-			ID:       track.ID,
-			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+			Name:        track.Name,
+			Artist:      track.Artists[0],
+			Duration:    track.TimeDuration().Round(time.Second).String(),
+			ID:          track.ID,
+			SpotifyItem: track,
+			Desc:        track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
 		})
 	}
 	return items, nil
@@ -205,11 +213,12 @@ func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, er
 	}
 	for _, track := range tracks.Tracks {
 		items = append(items, mainItem{
-			Name:     track.Name,
-			Artist:   track.Artists[0],
-			Duration: track.TimeDuration().Round(time.Second).String(),
-			ID:       track.ID,
-			Desc:     track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+			Name:        track.Name,
+			Artist:      track.Artists[0],
+			Duration:    track.TimeDuration().Round(time.Second).String(),
+			ID:          track.ID,
+			SpotifyItem: track,
+			Desc:        track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
 		})
 	}
 	return items, err

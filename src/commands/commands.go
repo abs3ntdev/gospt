@@ -208,7 +208,7 @@ func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) err
 
 func RadioGivenArtist(ctx *gctx.Context, client *spotify.Client, artist_id spotify.ID) error {
 	seed := spotify.Seeds{
-		Tracks: []spotify.ID{artist_id},
+		Artists: []spotify.ID{artist_id},
 	}
 	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
 	if err != nil {
