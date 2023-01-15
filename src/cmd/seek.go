@@ -13,10 +13,11 @@ func init() {
 }
 
 var seekCmd = &cobra.Command{
-	Use:   "seek {forward/backward/songposition in seconds}",
-	Short: "seek forward/backward or to a given second",
-	Args:  cobra.MinimumNArgs(1),
-	Long:  `Seeks forward or backward, or seeks to a given position in seconds`,
+	Use:     "seek {forward/backward/songposition in seconds}",
+	Short:   "seek forward/backward or to a given second",
+	Aliases: []string{"s"},
+	Args:    cobra.MinimumNArgs(1),
+	Long:    `Seeks forward or backward, or seeks to a given position in seconds`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if args[0] == "forward" || args[0] == "f" {
 			err := commands.Seek(ctx, client, true)
