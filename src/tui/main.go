@@ -537,6 +537,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, error) {
+	lipgloss.SetColorProfile(2)
 	playing, _ := client.PlayerCurrentlyPlaying(ctx)
 	if playing.Playing {
 		currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
