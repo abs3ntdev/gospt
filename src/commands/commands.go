@@ -16,6 +16,50 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+func SetVolume(ctx *gctx.Context, client *spotify.Client, vol int) error {
+	return client.Volume(ctx, vol)
+}
+
+func SetPosition(ctx *gctx.Context, client *spotify.Client, pos int) error {
+	err := client.Seek(ctx, pos)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+func Seek(ctx *gctx.Context, client *spotify.Client, fwd bool) error {
+	current, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	newPos := current.Progress + 5000
+	if !fwd {
+		newPos = current.Progress - 5000
+	}
+	err = client.Seek(ctx, newPos)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ChangeVolume(ctx *gctx.Context, client *spotify.Client, vol int) error {
+	state, err := client.PlayerState(ctx)
+	if err != nil {
+		return err
+	}
+	newVolume := state.Device.Volume + vol
+	if newVolume > 100 {
+		newVolume = 100
+	}
+	if newVolume < 0 {
+		newVolume = 0
+	}
+	return client.Volume(ctx, newVolume)
+}
+
 func Play(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {
