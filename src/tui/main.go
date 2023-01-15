@@ -391,7 +391,7 @@ func (m *mainModel) Tick() {
 			select {
 			case <-ticker.C:
 				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
-				if playing.Playing {
+				if playing != nil && playing.Playing {
 					currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
 				}
 			case <-quit:
@@ -537,13 +537,16 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, error) {
+	var err error
 	lipgloss.SetColorProfile(2)
-	playing, _ := client.PlayerCurrentlyPlaying(ctx)
-	if playing.Playing {
+	playing, err := client.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if playing != nil && playing.Playing {
 		currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
 	}
 	items := []list.Item{}
-	var err error
 	switch mode {
 	case Main:
 		items, err = MainView(ctx, client)
