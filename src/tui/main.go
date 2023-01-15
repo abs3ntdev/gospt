@@ -457,6 +457,18 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+		if msg.String() == ">" {
+			go HandleSeek(m.ctx, m.client, true)
+		}
+		if msg.String() == "<" {
+			go HandleSeek(m.ctx, m.client, false)
+		}
+		if msg.String() == "+" {
+			go HandleVolume(m.ctx, m.client, true)
+		}
+		if msg.String() == "-" {
+			go HandleVolume(m.ctx, m.client, false)
+		}
 		// search input
 		if m.input.Focused() {
 			search, cmd := m.Typing(msg)

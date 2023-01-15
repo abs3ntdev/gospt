@@ -31,6 +31,24 @@ func HandleAlbumRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) 
 	}
 }
 
+func HandleSeek(ctx *gctx.Context, client *spotify.Client, fwd bool) {
+	err := commands.Seek(ctx, client, fwd)
+	if err != nil {
+		return
+	}
+}
+
+func HandleVolume(ctx *gctx.Context, client *spotify.Client, up bool) {
+	vol := 10
+	if !up {
+		vol = -10
+	}
+	err := commands.ChangeVolume(ctx, client, vol)
+	if err != nil {
+		return
+	}
+}
+
 func HandleArtistRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
 	err := commands.RadioGivenArtist(ctx, client, id)
 	if err != nil {
