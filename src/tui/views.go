@@ -278,27 +278,35 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	wg.Wait()
 
 	items := []list.Item{}
-	items = append(items, mainItem{
-		Name:        "Saved Tracks",
-		Desc:        fmt.Sprintf("%d saved songs", saved_items.Total),
-		SpotifyItem: saved_items,
-	})
-	items = append(items, mainItem{
-		Name:        "Albums",
-		Desc:        fmt.Sprintf("%d albums", albums.Total),
-		SpotifyItem: albums,
-	})
-	items = append(items, mainItem{
-		Name:        "Artists",
-		Desc:        fmt.Sprintf("%d artists", artists.Total),
-		SpotifyItem: artists,
-	})
-	for _, playlist := range playlists.Playlists {
+	if saved_items != nil && saved_items.Total != 0 {
 		items = append(items, mainItem{
-			Name:        playlist.Name,
-			Desc:        playlist.Description,
-			SpotifyItem: playlist,
+			Name:        "Saved Tracks",
+			Desc:        fmt.Sprintf("%d saved songs", saved_items.Total),
+			SpotifyItem: saved_items,
 		})
+	}
+	if albums != nil && albums.Total != 0 {
+		items = append(items, mainItem{
+			Name:        "Albums",
+			Desc:        fmt.Sprintf("%d albums", albums.Total),
+			SpotifyItem: albums,
+		})
+	}
+	if artists != nil && artists.Total != 0 {
+		items = append(items, mainItem{
+			Name:        "Artists",
+			Desc:        fmt.Sprintf("%d artists", artists.Total),
+			SpotifyItem: artists,
+		})
+	}
+	if playlists != nil && playlists.Total != 0 {
+		for _, playlist := range playlists.Playlists {
+			items = append(items, mainItem{
+				Name:        playlist.Name,
+				Desc:        playlist.Description,
+				SpotifyItem: playlist,
+			})
+		}
 	}
 	return items, nil
 }
