@@ -10,6 +10,7 @@ Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 ![video](/assets/gost.webm)
 
 
+
 to install:
 
 ```yay -S gospt```
