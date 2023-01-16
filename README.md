@@ -50,6 +50,7 @@ then run
 
 you will be asked to login, you will only have to do this the first time. After login you will be asked to select your default device, this will also only happen once. To reset your device run ```gospot setdevice```
 
+helpful keybinds are shown in the bottom of the screen, hit ? to see all of them
 
 To use the custom radio feature:
 
