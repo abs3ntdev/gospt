@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"net/url"
 	"os"
@@ -682,9 +683,9 @@ func RadioFromPlaylist(ctx *gctx.Context, client *spotify.Client, playlist spoti
 	if total == 0 {
 		return fmt.Errorf("This playlist is empty")
 	}
-	pages := (total / 50)
+	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
-	if pages != 0 {
+	if pages > 1 {
 		randomPage = rand.Intn(int(pages-1)) + 1
 	}
 	playlistPage, err := client.GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
@@ -717,9 +718,9 @@ func RadioFromAlbum(ctx *gctx.Context, client *spotify.Client, album spotify.ID)
 	if total == 0 {
 		return fmt.Errorf("This playlist is empty")
 	}
-	pages := (total / 50)
+	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
-	if pages != 0 {
+	if pages > 1 {
 		randomPage = rand.Intn(int(pages-1)) + 1
 	}
 	albumTrackPage, err := AlbumTracks(ctx, client, album, randomPage)
@@ -751,8 +752,11 @@ func RadioFromSavedTracks(ctx *gctx.Context, client *spotify.Client) error {
 	if savedSongs.Total == 0 {
 		return fmt.Errorf("You have no saved songs")
 	}
-	pages := (savedSongs.Total / 50)
-	randomPage := rand.Intn(int(pages))
+	pages := int(math.Ceil(float64(savedSongs.Total) / 50))
+	randomPage := 1
+	if pages > 1 {
+		randomPage = rand.Intn(int(pages-1)) + 1
+	}
 	trackPage, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(randomPage*50))
 	if err != nil {
 		return err
