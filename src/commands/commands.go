@@ -578,15 +578,40 @@ func Next(ctx *gctx.Context, client *spotify.Client, amt int) error {
 			}
 			page++
 		}
-		fmt.Println(currentTrackIndex)
 		client.PlayOpt(ctx, &spotify.PlayOptions{
 			PlaybackContext: &current.PlaybackContext.URI,
 			PlaybackOffset: &spotify.PlaybackOffset{
 				Position: currentTrackIndex + amt,
 			},
 		})
+		return nil
+	case "album":
+		found := false
+		currentTrackIndex := 0
+		for !found {
+			page := 1
+			playlist, err := client.GetAlbumTracks(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
+			if err != nil {
+				return err
+			}
+			for idx, track := range playlist.Tracks {
+				if track.ID == current.Item.ID {
+					currentTrackIndex = idx + (50 * (page - 1))
+					found = true
+					break
+				}
+			}
+			page++
+		}
+		client.PlayOpt(ctx, &spotify.PlayOptions{
+			PlaybackContext: &current.PlaybackContext.URI,
+			PlaybackOffset: &spotify.PlaybackOffset{
+				Position: currentTrackIndex + amt,
+			},
+		})
+		return nil
 	default:
-		for i := 0; i <= amt; i++ {
+		for i := 0; i < amt; i++ {
 			client.Next(ctx)
 		}
 	}
