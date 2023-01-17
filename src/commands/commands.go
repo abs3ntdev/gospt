@@ -544,10 +544,51 @@ func Unlike(ctx *gctx.Context, client *spotify.Client) error {
 	return nil
 }
 
-func Next(ctx *gctx.Context, client *spotify.Client) error {
-	err := client.Next(ctx)
+func Next(ctx *gctx.Context, client *spotify.Client, amt int) error {
+	if amt == 1 {
+		err := client.Next(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	// found := false
+	// playingIndex := 0
+	current, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
 		return err
+	}
+	playbackContext := current.PlaybackContext.Type
+	switch playbackContext {
+	case "playlist":
+		found := false
+		currentTrackIndex := 0
+		for !found {
+			page := 1
+			playlist, err := client.GetPlaylistItems(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
+			if err != nil {
+				return err
+			}
+			for idx, track := range playlist.Items {
+				if track.Track.Track.ID == current.Item.ID {
+					currentTrackIndex = idx + (50 * (page - 1))
+					found = true
+					break
+				}
+			}
+			page++
+		}
+		fmt.Println(currentTrackIndex)
+		client.PlayOpt(ctx, &spotify.PlayOptions{
+			PlaybackContext: &current.PlaybackContext.URI,
+			PlaybackOffset: &spotify.PlaybackOffset{
+				Position: currentTrackIndex + amt,
+			},
+		})
+	default:
+		for i := 0; i <= amt; i++ {
+			client.Next(ctx)
+		}
 	}
 	return nil
 }

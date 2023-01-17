@@ -92,7 +92,7 @@ func HandlePlayTrack(ctx *gctx.Context, client *spotify.Client, track spotify.ID
 		fmt.Println(err.Error())
 		return
 	}
-	err = commands.Next(ctx, client)
+	err = commands.Next(ctx, client, 1)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
