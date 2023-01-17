@@ -391,7 +391,7 @@ func (m *mainModel) Tick() {
 			select {
 			case <-ticker.C:
 				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
-				if playing != nil && playing.Playing {
+				if playing != nil && playing.Playing && playing.Item != nil {
 					currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
 				}
 			case <-quit:
@@ -543,7 +543,7 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, 
 	if err != nil {
 		return nil, err
 	}
-	if playing != nil && playing.Playing {
+	if playing != nil && playing.Playing && playing.Item != nil {
 		currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
 	}
 	items := []list.Item{}
