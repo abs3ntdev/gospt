@@ -66,3 +66,5 @@ To view help:
 ```gospt --help```
 
 Very open to contributations feel free to open a PR
+
+[wiki](https://gitea.asdf.cafe/abs3nt/gospt/wiki)
