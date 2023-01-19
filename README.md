@@ -22,10 +22,7 @@ Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 
 ```cd gospt```
 
-```make build```
-then
-
-```sudo make install```
+```make build && sudo make install```
 
 [AUR]: https://aur.archlinux.org/packages/gospt
 [Official repositories]: https://pkgsrc.se/audio/gospt/
