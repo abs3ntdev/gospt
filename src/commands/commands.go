@@ -461,7 +461,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
 	}
 	to_add := 500 - (playlistItems.Total - len(to_remove))
-	fmt.Println("TO ADD", to_add)
 	rand.Seed(time.Now().Unix())
 	playlistItems, err = client.GetPlaylistItems(ctx, radioPlaylist.ID)
 	if err != nil {
@@ -514,12 +513,9 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		all_recs[rec] = struct{}{}
 		queue = append(queue, rec)
 	}
-	fmt.Println("AHHHHHHH", len(queue))
 	to_add -= len(queue)
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
-
-		fmt.Println("AHHH ERROR ONE")
 		return err
 	}
 	err = client.Repeat(ctx, "context")
