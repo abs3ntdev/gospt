@@ -1,6 +1,8 @@
-build:
+build: gospt
+
+gospt: $(shell find . -name '*.go')
 	mkdir -p bin
-	go build -o ./bin/gospt .
+	go build -o gospt .
 
 completions:
 	mkdir -p completions
@@ -16,6 +18,7 @@ tidy:
 
 clean:
 	rm -rf bin
+	rm -rf gospt
 	rm -rf completions
 
 uninstall:
@@ -23,7 +26,7 @@ uninstall:
 	rm /usr/share/zsh/site-functions/_gospt
 
 install:
-	cp bin/gospt /usr/bin
+	cp gospt /usr/bin
 	cp completions/_gospt /usr/share/zsh/site-functions/_gospt
 	cp completions/gospt /usr/share/bash-completion/completions/gospt
 	cp completions/gospt.fish /usr/share/fish/vendor_completions.d/gospt.fish

@@ -2,8 +2,9 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"math/rand"
 	"net/url"
@@ -728,7 +729,7 @@ func SetDevice(ctx *gctx.Context, client *spotify.Client, device spotify.PlayerD
 		return err
 	}
 	configDir, _ := os.UserConfigDir()
-	err = ioutil.WriteFile(filepath.Join(configDir, "gospt/device.json"), out, 0o644)
+	err = os.WriteFile(filepath.Join(configDir, "gospt/device.json"), out, 0o644)
 	if err != nil {
 		return err
 	}
@@ -915,7 +916,7 @@ func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
 			return err
 		}
 		defer deviceFile.Close()
-		deviceValue, err := ioutil.ReadAll(deviceFile)
+		deviceValue, err := io.ReadAll(deviceFile)
 		if err != nil {
 			return err
 		}
@@ -936,35 +937,36 @@ func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
 
 func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullPlaylist, error) {
 	configDir, _ := os.UserConfigDir()
-	if _, err := os.Stat(filepath.Join(configDir, "gospt/radio.json")); err == nil {
-		playlistFile, err := os.Open(filepath.Join(configDir, "gospt/radio.json"))
-		if err != nil {
-			return nil, err
-		}
-		defer playlistFile.Close()
-		playlistValue, err := ioutil.ReadAll(playlistFile)
-		if err != nil {
-			return nil, err
-		}
-		var playlist *spotify.FullPlaylist
-		err = json.Unmarshal(playlistValue, &playlist)
-		if err != nil {
-			return nil, err
-		}
-		return playlist, nil
+	playlistFile, err := os.ReadFile(filepath.Join(configDir, "gospt/radio.json"))
+	if errors.Is(err, os.ErrNotExist) {
+		return CreateRadioPlaylist(ctx, client)
 	}
+	if err != nil {
+		return nil, err
+	}
+	var playlist *spotify.FullPlaylist
+	err = json.Unmarshal(playlistFile, &playlist)
+	if err != nil {
+		return nil, err
+	}
+	return playlist, nil
+}
+
+func CreateRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullPlaylist, error) {
 	// private flag doesnt work
+	configDir, _ := os.UserConfigDir()
 	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, "autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
 		return nil, err
 	}
-	out, err := json.MarshalIndent(playlist, "", " ")
+	raw, err := json.MarshalIndent(playlist, "", " ")
 	if err != nil {
 		return nil, err
 	}
-	err = ioutil.WriteFile(filepath.Join(configDir, "gospt/radio.json"), out, 0o644)
+	err = os.WriteFile(filepath.Join(configDir, "gospt/radio.json"), raw, 0o644)
 	if err != nil {
 		return nil, err
 	}
+
 	return playlist, nil
 }
