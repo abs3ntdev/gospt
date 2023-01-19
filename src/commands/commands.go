@@ -422,14 +422,16 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		return err
 	}
 	if !status.Playing {
-		fmt.Println("Nothing is playing")
 		return nil
 	}
 	to_remove := []spotify.ID{}
 	radioPlaylist, err := GetRadioPlaylist(ctx, client)
 	if status.PlaybackContext.URI != radioPlaylist.URI {
-		fmt.Println("You are not playing the radio, please run gospt radio to start")
 		return nil
+	}
+	playlistItems, err := client.GetPlaylistItems(ctx, radioPlaylist.ID)
+	if err != nil {
+		return err
 	}
 	found := false
 	page := 0
@@ -447,30 +449,106 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		}
 		page++
 	}
-	recomendationIds := []spotify.ID{}
 	if len(to_remove) > 0 {
-		_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, to_remove...)
-		if err != nil {
-			return err
-		}
-		current_song, err := client.PlayerCurrentlyPlaying(ctx)
-		if err != nil {
-			return err
-		}
-		seed := spotify.Seeds{
-			Tracks: []spotify.ID{current_song.Item.ID},
-		}
-		recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
-		if err != nil {
-			return err
-		}
-		for idx, song := range recomendations.Tracks {
-			if idx > len(to_remove) {
-				break
+		var trackGroups []spotify.ID
+		for idx, item := range to_remove {
+			if idx%100 == 0 {
+				_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
+				trackGroups = []spotify.ID{}
 			}
-			recomendationIds = append(recomendationIds, song.ID)
+			trackGroups = append(trackGroups, item)
 		}
-		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, recomendationIds...)
+		_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
+	}
+	to_add := 500 - (playlistItems.Total - len(to_remove))
+	fmt.Println("TO ADD", to_add)
+	rand.Seed(time.Now().Unix())
+	playlistItems, err = client.GetPlaylistItems(ctx, radioPlaylist.ID)
+	if err != nil {
+		return err
+	}
+	total := playlistItems.Total
+	pages := int(math.Ceil(float64(total) / 50))
+	randomPage := 1
+	if pages > 1 {
+		randomPage = rand.Intn(int(pages-1)) + 1
+	}
+	playlistPage, err := client.GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
+	if err != nil {
+		return err
+	}
+	pageSongs := playlistPage.Items
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	seedCount := 5
+	if len(pageSongs) < seedCount {
+		seedCount = len(pageSongs)
+	}
+	seedIds := []spotify.ID{}
+	for idx, song := range pageSongs {
+		if idx >= seedCount {
+			break
+		}
+		seedIds = append(seedIds, song.Track.Track.ID)
+	}
+	seed := spotify.Seeds{
+		Tracks: seedIds,
+	}
+	recomendations, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(95))
+	if err != nil {
+		return err
+	}
+	recomendationIds := []spotify.ID{}
+	for _, song := range recomendations.Tracks {
+		recomendationIds = append(recomendationIds, song.ID)
+	}
+	queue := []spotify.ID{}
+	queue = append(queue, seedIds...)
+	all_recs := map[spotify.ID]struct{}{}
+	for _, id := range seedIds {
+		all_recs[id] = struct{}{}
+	}
+	for idx, rec := range recomendationIds {
+		if idx > to_add {
+			break
+		}
+		all_recs[rec] = struct{}{}
+		queue = append(queue, rec)
+	}
+	fmt.Println("AHHHHHHH", len(queue))
+	to_add -= len(queue)
+	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
+	if err != nil {
+
+		fmt.Println("AHHH ERROR ONE")
+		return err
+	}
+	err = client.Repeat(ctx, "context")
+	if err != nil {
+		return err
+	}
+	for to_add > 0 {
+		id := rand.Intn(len(recomendationIds)-2) + 1
+		seed := spotify.Seeds{
+			Tracks: []spotify.ID{recomendationIds[id]},
+		}
+		additional_recs, err := client.GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
+		if err != nil {
+			return err
+		}
+		additionalRecsIds := []spotify.ID{}
+		for idx, song := range additional_recs.Tracks {
+			if _, ok := all_recs[song.ID]; !ok {
+				if idx > to_add {
+					break
+				}
+				all_recs[song.ID] = struct{}{}
+				additionalRecsIds = append(additionalRecsIds, song.ID)
+				queue = append(queue, song.ID)
+			}
+		}
+		fmt.Println(to_add, len(additionalRecsIds))
+		to_add -= len(queue)
+		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
 			return err
 		}
@@ -959,6 +1037,7 @@ func CreateRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.Fu
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("PLAYLIST CREATED", playlist.ID)
 	raw, err := json.MarshalIndent(playlist, "", " ")
 	if err != nil {
 		return nil, err
