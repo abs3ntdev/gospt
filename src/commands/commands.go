@@ -784,7 +784,11 @@ func PrintState(state *spotify.PlayerState) error {
 }
 
 func PrintPlaying(current *spotify.CurrentlyPlaying) error {
-	fmt.Println(fmt.Sprintf("%s by %s", current.Item.Name, current.Item.Artists[0].Name))
+	icon := "▶"
+	if !current.Playing {
+		icon = "⏸"
+	}
+	fmt.Println(fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name))
 	return nil
 }
 
