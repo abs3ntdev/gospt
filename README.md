@@ -8,11 +8,15 @@ Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 ---
 ![video](/assets/gospt.gif)
 
-to install:
+# To install (with a package manager):
 
+## Archlinux ([AUR])
 ```yay -S gospt```
 
-or to build from source by pulling and building the binary
+## NetBSD ([Official repositories])
+```pkgin install gospt```
+
+# To build from source by pulling and building the binary
 
 ```git clone https://gitea.asdf.cafe/abs3nt/gospt```
 
@@ -23,6 +27,10 @@ then
 
 ```sudo make install```
 
+[AUR]: https://aur.archlinux.org/packages/gospt
+[Official repositories]: https://pkgsrc.se/audio/gospt/
+
+# Configuration
 go here https://developer.spotify.com/dashboard/applications to make a spotify application. you will need a client ID and a client secret. Set your redirect uri like this:
 
 ```http://localhost:8888/callback```
