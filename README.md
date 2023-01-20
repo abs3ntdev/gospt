@@ -72,4 +72,6 @@ To view help:
 
 Very open to contributations feel free to open a PR
 
+[tmux plugin](https://gitea.asdf.cafe/abs3nt/tmux-gospt)
+
 [wiki](https://gitea.asdf.cafe/abs3nt/gospt/wiki)
