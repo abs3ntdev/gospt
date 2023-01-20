@@ -12,7 +12,8 @@ pipeline:
       event: tag
     image: woodpeckerci/plugin-gitea-release
     settings:
-      base_url: http://Gitea:3000
+      skip-verify: true
+      base_url: https://gitea.asdf.cafe
       files:
         - gospt
         - gospt_zsh
