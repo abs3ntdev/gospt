@@ -12,7 +12,7 @@ func init() {
 
 var playCmd = &cobra.Command{
 	Use:     "play",
-	Aliases: []string{"p"},
+	Aliases: []string{"pl", "start", "s"},
 	Short:   "Plays spotify",
 	Long:    `Plays queued song on spotify, uses last used device and activates it if needed`,
 	Run: func(cmd *cobra.Command, args []string) {

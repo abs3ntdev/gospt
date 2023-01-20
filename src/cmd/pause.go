@@ -11,9 +11,10 @@ func init() {
 }
 
 var pauseCmd = &cobra.Command{
-	Use:   "pause",
-	Short: "Pauses spotify",
-	Long:  `Pauses currently playing song on spotify`,
+	Use:     "pause",
+	Short:   "Pauses spotify",
+	Aliases: []string{"pa"},
+	Long:    `Pauses currently playing song on spotify`,
 	Run: func(cmd *cobra.Command, args []string) {
 		commands.Pause(ctx, client)
 	},
