@@ -5,7 +5,6 @@ If you open an issue or PR on github I won't see it please use gitea. Register o
 
 This project is still under heavy development and some things might not work or not work as intended. Don't hesitate to open an issue to let me know.
 
-Project Discord: [Join Here](https://discord.gg/nWEEK6HrUD)
 ---
 ![video](/assets/gospt.gif)
 
