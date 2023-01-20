@@ -80,8 +80,8 @@ type mainModel struct {
 }
 
 func (m *mainModel) PlayRadio() {
-	currentlyPlaying = m.list.SelectedItem().FilterValue()
-	m.list.NewStatusMessage("Playing " + currentlyPlaying)
+	currentlyPlaying = m.list.SelectedItem().(mainItem).Title()
+	m.list.NewStatusMessage("Starting radio for " + currentlyPlaying)
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
 	switch selectedItem.(type) {
 	case spotify.SimplePlaylist:

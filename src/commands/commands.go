@@ -1037,7 +1037,6 @@ func CreateRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.Fu
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("PLAYLIST CREATED", playlist.ID)
 	raw, err := json.MarshalIndent(playlist, "", " ")
 	if err != nil {
 		return nil, err
