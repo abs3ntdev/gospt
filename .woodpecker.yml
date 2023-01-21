@@ -8,8 +8,6 @@ pipeline:
       - ./gospt completion fish > gospt_fish
 
   publish:
-    when:
-      event: tag
     image: woodpeckerci/plugin-gitea-release
     settings:
       skip_verify: true
@@ -22,3 +20,22 @@ pipeline:
       api_key:
         from_secret: GITEA_KEY
       checksum: sha256
+    when:
+      event: tag
+
+  comment:
+    image: mcs94/gitea-comment
+    settings:
+      gitea_address: https://gitea.asdf.cafe
+      gitea_token:
+        from_secret: GITEA_KEY
+      comment: >
+        ✅ Build ${CI_BUILD_EVENT} of `${CI_REPO_NAME}` has status `${CI_BUILD_STATUS}`.
+
+        📝 Commit by ${CI_COMMIT_AUTHOR} on `${CI_COMMIT_BRANCH}`:
+
+        `${CI_COMMIT_MESSAGE}`
+
+        🌐 ${CI_BUILD_LINK}
+    when:
+      event: [pull_request]
