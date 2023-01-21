@@ -22,6 +22,7 @@ pipeline:
       checksum: sha256
     when:
       event: tag
+      branch: master
 
   comment:
     image: mcs94/gitea-comment
