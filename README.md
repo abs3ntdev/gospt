@@ -6,6 +6,7 @@ If you open an issue or PR on github I won't see it please use gitea. Register o
 This project is still under heavy development and some things might not work or not work as intended. Don't hesitate to open an issue to let me know.
 
 ---
+[![status-badge](https://ci.asdf.cafe/api/badges/abs3nt/gospt/status.svg)](https://ci.asdf.cafe/abs3nt/gospt)
 ![video](/assets/gospt.gif)
 
 # To install (with a package manager):
