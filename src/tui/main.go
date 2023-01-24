@@ -87,7 +87,7 @@ func (m *mainModel) PlayRadio() {
 	case spotify.SimplePlaylist:
 		go HandlePlaylistRadio(m.ctx, m.client, selectedItem.(spotify.SimplePlaylist))
 		return
-	case spotify.SavedTrackPage:
+	case *spotify.SavedTrackPage:
 		go HandleLibraryRadio(m.ctx, m.client)
 		return
 	case spotify.SimpleAlbum:

@@ -66,11 +66,13 @@ func Play(ctx *gctx.Context, client *spotify.Client) error {
 	err := client.Play(ctx)
 	if err != nil {
 		if isNoActiveError(err) {
-			err := activateDevice(ctx, client)
+			deviceID, err := activateDevice(ctx, client)
 			if err != nil {
 				return err
 			}
-			err = client.Play(ctx)
+			err = client.PlayOpt(ctx, &spotify.PlayOptions{
+				DeviceID: &deviceID,
+			})
 			if err != nil {
 				return err
 			}
@@ -143,15 +145,19 @@ func PlayUrl(ctx *gctx.Context, client *spotify.Client, args []string) error {
 	err = client.QueueSong(ctx, spotify.ID(track_id))
 	if err != nil {
 		if isNoActiveError(err) {
-			err := activateDevice(ctx, client)
+			deviceID, err := activateDevice(ctx, client)
 			if err != nil {
 				return err
 			}
-			err = client.QueueSong(ctx, spotify.ID(track_id))
+			err = client.QueueSongOpt(ctx, spotify.ID(track_id), &spotify.PlayOptions{
+				DeviceID: &deviceID,
+			})
 			if err != nil {
 				return err
 			}
-			err = client.Next(ctx)
+			err = client.NextOpt(ctx, &spotify.PlayOptions{
+				DeviceID: &deviceID,
+			})
 			if err != nil {
 				return err
 			}
@@ -171,11 +177,13 @@ func QueueSong(ctx *gctx.Context, client *spotify.Client, id spotify.ID) error {
 	err := client.QueueSong(ctx, id)
 	if err != nil {
 		if isNoActiveError(err) {
-			err := activateDevice(ctx, client)
+			deviceID, err := activateDevice(ctx, client)
 			if err != nil {
 				return err
 			}
-			err = client.QueueSong(ctx, id)
+			err = client.QueueSongOpt(ctx, id, &spotify.PlayOptions{
+				DeviceID: &deviceID,
+			})
 			if err != nil {
 				return err
 			}
@@ -194,14 +202,32 @@ func PlaySongInPlaylist(ctx *gctx.Context, client *spotify.Client, context *spot
 	})
 	if e != nil {
 		if isNoActiveError(e) {
-			err := activateDevice(ctx, client)
+			deviceID, err := activateDevice(ctx, client)
 			if err != nil {
 				return err
 			}
 			err = client.PlayOpt(ctx, &spotify.PlayOptions{
 				PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
 				PlaybackContext: context,
+				DeviceID:        &deviceID,
 			})
+
+			if err != nil {
+				if isNoActiveError(err) {
+					deviceID, err := activateDevice(ctx, client)
+					if err != nil {
+						return err
+					}
+					err = client.PlayOpt(ctx, &spotify.PlayOptions{
+						PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
+						PlaybackContext: context,
+						DeviceID:        &deviceID,
+					})
+					if err != nil {
+						return err
+					}
+				}
+			}
 			err = client.Play(ctx)
 			if err != nil {
 				return err
@@ -216,27 +242,53 @@ func PlaySongInPlaylist(ctx *gctx.Context, client *spotify.Client, context *spot
 func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) error {
 	err := ClearRadio(ctx, client)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	playlist, err := GetRadioPlaylist(ctx, client)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	songs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(position))
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	to_add := []spotify.ID{}
 	for _, song := range songs.Tracks {
 		to_add = append(to_add, song.ID)
 	}
-	client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
-	client.PlayOpt(ctx, &spotify.PlayOptions{
+	fmt.Println(len(to_add))
+	_, err = client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	err = client.PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &playlist.URI,
 		PlaybackOffset: &spotify.PlaybackOffset{
 			Position: 0,
 		},
 	})
+	if err != nil {
+		if isNoActiveError(err) {
+			deviceID, err := activateDevice(ctx, client)
+			if err != nil {
+				return err
+			}
+			err = client.PlayOpt(ctx, &spotify.PlayOptions{
+				PlaybackContext: &playlist.URI,
+				PlaybackOffset: &spotify.PlaybackOffset{
+					Position: 0,
+				},
+				DeviceID: &deviceID,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	for page := 2; page <= 5; page++ {
 		songs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((50*(page-1))+position))
 		if err != nil {
@@ -349,13 +401,32 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song_id spotify.I
 	if pos != 0 {
 		pos = pos + int(delay)
 	}
-	client.PlayOpt(ctx, &spotify.PlayOptions{
+	err = client.PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
 		PlaybackOffset: &spotify.PlaybackOffset{
 			Position: 0,
 		},
 		PositionMs: pos,
 	})
+	if err != nil {
+		if isNoActiveError(err) {
+			deviceID, err := activateDevice(ctx, client)
+			if err != nil {
+				return err
+			}
+			err = client.PlayOpt(ctx, &spotify.PlayOptions{
+				PlaybackContext: &radioPlaylist.URI,
+				PlaybackOffset: &spotify.PlaybackOffset{
+					Position: 0,
+				},
+				DeviceID:   &deviceID,
+				PositionMs: pos,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	err = client.Repeat(ctx, "context")
 	if err != nil {
 		return err
@@ -393,11 +464,10 @@ func Radio(ctx *gctx.Context, client *spotify.Client) error {
 		seed_song = current_song.Item.SimpleTrack
 	}
 	if current_song.Item == nil {
-		err := activateDevice(ctx, client)
+		_, err := activateDevice(ctx, client)
 		if err != nil {
 			return err
 		}
-
 		tracks, err := client.CurrentUsersTracks(ctx, spotify.Limit(10))
 		if err != nil {
 			return err
@@ -623,6 +693,18 @@ func Next(ctx *gctx.Context, client *spotify.Client, amt int) error {
 	if amt == 1 {
 		err := client.Next(ctx)
 		if err != nil {
+			if isNoActiveError(err) {
+				deviceId, err := activateDevice(ctx, client)
+				if err != nil {
+					return err
+				}
+				err = client.NextOpt(ctx, &spotify.PlayOptions{
+					DeviceID: &deviceId,
+				})
+				if err != nil {
+					return err
+				}
+			}
 			return err
 		}
 		return nil
@@ -811,7 +893,7 @@ func SetDevice(ctx *gctx.Context, client *spotify.Client, device spotify.PlayerD
 	if err != nil {
 		return err
 	}
-	err = activateDevice(ctx, client)
+	_, err = activateDevice(ctx, client)
 	if err != nil {
 		return err
 	}
@@ -951,15 +1033,29 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 	if err != nil {
 		return err
 	}
-	client.PlayOpt(ctx, &spotify.PlayOptions{
+	err = client.PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
 		PlaybackOffset: &spotify.PlaybackOffset{
 			Position: 0,
 		},
 	})
-	err = client.Repeat(ctx, "context")
 	if err != nil {
-		return err
+		if isNoActiveError(err) {
+			deviceId, err := activateDevice(ctx, client)
+			if err != nil {
+				return err
+			}
+			err = client.PlayOpt(ctx, &spotify.PlayOptions{
+				PlaybackContext: &radioPlaylist.URI,
+				PlaybackOffset: &spotify.PlaybackOffset{
+					Position: 0,
+				},
+				DeviceID: &deviceId,
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	for i := 0; i < 4; i++ {
 		id := rand.Intn(len(recomendationIds)-2) + 1
@@ -986,31 +1082,54 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 	return nil
 }
 
-func activateDevice(ctx *gctx.Context, client *spotify.Client) error {
+func activateDevice(ctx *gctx.Context, client *spotify.Client) (spotify.ID, error) {
+	var device *spotify.PlayerDevice
 	configDir, _ := os.UserConfigDir()
 	if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err == nil {
 		deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
 		if err != nil {
-			return err
+			return "", err
 		}
 		defer deviceFile.Close()
 		deviceValue, err := io.ReadAll(deviceFile)
 		if err != nil {
-			return err
+			return "", err
 		}
-		var device *spotify.PlayerDevice
 		err = json.Unmarshal(deviceValue, &device)
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = client.TransferPlayback(ctx, device.ID, true)
 		if err != nil {
-			return err
+			return "", err
 		}
 	} else {
 		fmt.Println("YOU MUST RUN gospt setdevice FIRST")
 	}
-	return nil
+	return device.ID, nil
+}
+
+func getDefaultDevice(ctx *gctx.Context, client *spotify.Client) (spotify.ID, error) {
+	configDir, _ := os.UserConfigDir()
+	if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err == nil {
+		deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
+		if err != nil {
+			return "", err
+		}
+		defer deviceFile.Close()
+		deviceValue, err := io.ReadAll(deviceFile)
+		if err != nil {
+			return "", err
+		}
+		var device *spotify.PlayerDevice
+		err = json.Unmarshal(deviceValue, &device)
+		if err != nil {
+			return "", err
+		}
+		return device.ID, nil
+	} else {
+		return "", err
+	}
 }
 
 func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client) (*spotify.FullPlaylist, error) {
