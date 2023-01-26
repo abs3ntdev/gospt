@@ -259,7 +259,6 @@ func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) err
 	for _, song := range songs.Tracks {
 		to_add = append(to_add, song.ID)
 	}
-	fmt.Println(len(to_add))
 	_, err = client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -612,7 +611,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 				queue = append(queue, song.ID)
 			}
 		}
-		fmt.Println(to_add, len(additionalRecsIds))
 		to_add -= len(queue)
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
