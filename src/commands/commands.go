@@ -797,6 +797,14 @@ func Link(ctx *gctx.Context, client *spotify.Client) (string, error) {
 	return state.Item.ExternalURLs["spotify"], nil
 }
 
+func LinkContext(ctx *gctx.Context, client *spotify.Client) (string, error) {
+	state, err := client.PlayerState(ctx)
+	if err != nil {
+		return "", err
+	}
+	return string(state.PlaybackContext.ExternalURLs["spotify"]), nil
+}
+
 func NowPlaying(ctx *gctx.Context, client *spotify.Client) error {
 	current, err := client.PlayerCurrentlyPlaying(ctx)
 	if err != nil {

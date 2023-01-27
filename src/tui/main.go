@@ -6,6 +6,7 @@ import (
 
 	"gospt/src/gctx"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -190,6 +191,38 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		page = 0
 	}
 	return nil, nil
+}
+
+type SpotifyUrl struct {
+	ExternalURLs map[string]string
+}
+
+func (m *mainModel) CopyToClipboard() error {
+	item := m.list.SelectedItem().(mainItem).SpotifyItem
+	m.list.NewStatusMessage("Copying link to " + item.(mainItem).Title())
+	switch item.(type) {
+	case spotify.SimplePlaylist:
+		clipboard.WriteAll(item.(spotify.SimplePlaylist).ExternalURLs["spotify"])
+	case *spotify.FullPlaylist:
+		clipboard.WriteAll(item.(*spotify.FullPlaylist).ExternalURLs["spotify"])
+	case spotify.SimpleAlbum:
+		clipboard.WriteAll(item.(spotify.SimpleAlbum).ExternalURLs["spotify"])
+	case *spotify.FullAlbum:
+		clipboard.WriteAll(item.(*spotify.FullAlbum).ExternalURLs["spotify"])
+	case spotify.SimpleArtist:
+		clipboard.WriteAll(item.(spotify.SimpleArtist).ExternalURLs["spotify"])
+	case *spotify.FullArtist:
+		clipboard.WriteAll(item.(*spotify.FullArtist).ExternalURLs["spotify"])
+	case spotify.SimpleTrack:
+		clipboard.WriteAll(item.(spotify.SimpleTrack).ExternalURLs["spotify"])
+	case spotify.PlaylistTrack:
+		clipboard.WriteAll(item.(spotify.PlaylistTrack).Track.ExternalURLs["spotify"])
+	case spotify.SavedTrack:
+		clipboard.WriteAll(item.(spotify.SavedTrack).ExternalURLs["spotify"])
+	case spotify.FullTrack:
+		clipboard.WriteAll(item.(spotify.FullTrack).ExternalURLs["spotify"])
+	}
+	return nil
 }
 
 func (m *mainModel) SelectItem() error {
@@ -457,6 +490,12 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+		if msg.String() == "c" {
+			err := m.CopyToClipboard()
+			if err != nil {
+				return m, tea.Quit
+			}
+		}
 		if msg.String() == ">" {
 			go HandleSeek(m.ctx, m.client, true)
 		}
@@ -579,6 +618,7 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, 
 			key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "search")),
 			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
+			key.NewBinding(key.WithKeys("ctrl"+"shift"+"c"), key.WithHelp("ctrl+shift+c", "copy url")),
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
 	}
@@ -592,6 +632,7 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, 
 			key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "volume down")),
 			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
+			key.NewBinding(key.WithKeys("ctrl"+"shift"+"c"), key.WithHelp("ctrl+shift+c", "copy url")),
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
 	}

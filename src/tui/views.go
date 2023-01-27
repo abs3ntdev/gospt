@@ -36,11 +36,12 @@ func PlaylistView(ctx *gctx.Context, client *spotify.Client, playlist spotify.Si
 	}
 	for _, track := range tracks.Tracks {
 		items = append(items, mainItem{
-			Name:     track.Track.Name,
-			Artist:   track.Track.Artists[0],
-			Duration: track.Track.TimeDuration().Round(time.Second).String(),
-			ID:       track.Track.ID,
-			Desc:     track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
+			Name:        track.Track.Name,
+			Artist:      track.Track.Artists[0],
+			Duration:    track.Track.TimeDuration().Round(time.Second).String(),
+			ID:          track.Track.ID,
+			Desc:        track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
+			SpotifyItem: track,
 		})
 	}
 	return items, nil
