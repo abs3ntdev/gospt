@@ -26,7 +26,7 @@ This project is still under heavy development and some things might not work or 
 ```make build && sudo make install```
 
 [AUR]: https://aur.archlinux.org/packages/gospt
-[Official repositories]: https://pkgsrc.se/audio/gospt/
+[Official repositories]: http://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/audio/gospt/
 
 # Configuration
 go here https://developer.spotify.com/dashboard/applications to make a spotify application. you will need a client ID and a client secret. Set your redirect uri like this:
