@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
+	_ "modernc.org/sqlite"
 )
 
 func SetVolume(ctx *gctx.Context, client *spotify.Client, vol int) error {
@@ -245,7 +247,7 @@ func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) err
 		fmt.Println(err.Error())
 		return err
 	}
-	playlist, err := GetRadioPlaylist(ctx, client, "Saved Songs")
+	playlist, _, err := GetRadioPlaylist(ctx, client, "Saved Songs")
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -319,15 +321,23 @@ func RadioGivenArtist(ctx *gctx.Context, client *spotify.Client, artist spotify.
 	if err != nil {
 		return err
 	}
-	radioPlaylist, err := GetRadioPlaylist(ctx, client, artist.Name)
+	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, artist.Name)
 	if err != nil {
 		return err
 	}
 	queue := []spotify.ID{}
-	all_recs := map[spotify.ID]bool{}
 	for _, rec := range recomendationIds {
-		all_recs[rec] = true
-		queue = append(queue, rec)
+		exists, err := SongExists(db, rec)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err := db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(rec)))
+			if err != nil {
+				return err
+			}
+			queue = append(queue, rec)
+		}
 	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
@@ -354,7 +364,18 @@ func RadioGivenArtist(ctx *gctx.Context, client *spotify.Client, artist spotify.
 		}
 		additionalRecsIds := []spotify.ID{}
 		for _, song := range additional_recs.Tracks {
-			additionalRecsIds = append(additionalRecsIds, song.ID)
+			exists, err := SongExists(db, song.ID)
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+			if !exists {
+				_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(song.ID)))
+				if err != nil {
+					return err
+				}
+				additionalRecsIds = append(additionalRecsIds, song.ID)
+			}
 		}
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
@@ -381,16 +402,27 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song spotify.Simp
 	if err != nil {
 		return err
 	}
-	radioPlaylist, err := GetRadioPlaylist(ctx, client, song.Name)
+	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, song.Name)
+	if err != nil {
+		return err
+	}
+	_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(song.ID)))
 	if err != nil {
 		return err
 	}
 	queue := []spotify.ID{song.ID}
-	all_recs := map[spotify.ID]bool{}
-	all_recs[song.ID] = true
 	for _, rec := range recomendationIds {
-		all_recs[rec] = true
-		queue = append(queue, rec)
+		exists, err := SongExists(db, rec)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err := db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(rec)))
+			if err != nil {
+				return err
+			}
+			queue = append(queue, rec)
+		}
 	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
@@ -441,7 +473,18 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song spotify.Simp
 		}
 		additionalRecsIds := []spotify.ID{}
 		for _, song := range additional_recs.Tracks {
-			additionalRecsIds = append(additionalRecsIds, song.ID)
+			exists, err := SongExists(db, song.ID)
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+			if !exists {
+				_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(song.ID)))
+				if err != nil {
+					return err
+				}
+				additionalRecsIds = append(additionalRecsIds, song.ID)
+			}
 		}
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
@@ -449,6 +492,21 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song spotify.Simp
 		}
 	}
 	return nil
+}
+
+func SongExists(db *sql.DB, song spotify.ID) (bool, error) {
+	song_id := string(song)
+	sqlStmt := `SELECT id FROM radio WHERE id = ?`
+	err := db.QueryRow(sqlStmt, string(song_id)).Scan(&song_id)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func Radio(ctx *gctx.Context, client *spotify.Client) error {
@@ -494,14 +552,21 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		return nil
 	}
 	to_remove := []spotify.ID{}
-	radioPlaylist, err := GetRadioPlaylist(ctx, client, "")
+	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, "")
+	if err != nil {
+		fmt.Println("ERROR AHHH", err.Error())
+	}
+
 	if status.PlaybackContext.URI != radioPlaylist.URI {
+		fmt.Println(status.PlaybackContext.URI, radioPlaylist.URI)
 		return nil
 	}
+
 	playlistItems, err := client.GetPlaylistItems(ctx, radioPlaylist.ID)
 	if err != nil {
 		return err
 	}
+
 	found := false
 	page := 0
 	for !found {
@@ -526,9 +591,15 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 				trackGroups = []spotify.ID{}
 			}
 			trackGroups = append(trackGroups, item)
+			_, err = db.QueryContext(ctx, fmt.Sprintf("DELETE FROM radio WHERE id='%s'", string(item)))
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
 		}
 		_, err = client.RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
 	}
+
 	to_add := 500 - (playlistItems.Total - len(to_remove))
 	rand.Seed(time.Now().Unix())
 	playlistItems, err = client.GetPlaylistItems(ctx, radioPlaylist.ID)
@@ -567,19 +638,20 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 	}
 	recomendationIds := []spotify.ID{}
 	for _, song := range recomendations.Tracks {
-		recomendationIds = append(recomendationIds, song.ID)
+		exists, err := SongExists(db, song.ID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			recomendationIds = append(recomendationIds, song.ID)
+		}
 	}
 	queue := []spotify.ID{}
-	queue = append(queue, seedIds...)
-	all_recs := map[spotify.ID]struct{}{}
-	for _, id := range seedIds {
-		all_recs[id] = struct{}{}
-	}
 	for idx, rec := range recomendationIds {
 		if idx > to_add {
 			break
 		}
-		all_recs[rec] = struct{}{}
+		_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", rec.String()))
 		queue = append(queue, rec)
 	}
 	to_add -= len(queue)
@@ -602,11 +674,14 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 		}
 		additionalRecsIds := []spotify.ID{}
 		for idx, song := range additional_recs.Tracks {
-			if _, ok := all_recs[song.ID]; !ok {
+			exists, err := SongExists(db, song.ID)
+			if err != nil {
+				return err
+			}
+			if !exists {
 				if idx > to_add {
 					break
 				}
-				all_recs[song.ID] = struct{}{}
 				additionalRecsIds = append(additionalRecsIds, song.ID)
 				queue = append(queue, song.ID)
 			}
@@ -621,7 +696,7 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 }
 
 func ClearRadio(ctx *gctx.Context, client *spotify.Client) error {
-	radioPlaylist, err := GetRadioPlaylist(ctx, client, "")
+	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, "")
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -630,6 +705,7 @@ func ClearRadio(ctx *gctx.Context, client *spotify.Client) error {
 	if err != nil {
 		return err
 	}
+	db.Query("DROP TABLE IF EXISTS radio")
 	configDir, _ := os.UserConfigDir()
 	os.Remove(filepath.Join(configDir, "gospt/radio.json"))
 	client.Pause(ctx)
@@ -1024,16 +1100,23 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 	if err != nil {
 		return err
 	}
-	radioPlaylist, err := GetRadioPlaylist(ctx, client, name)
+	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, name)
 	if err != nil {
 		return err
 	}
 	queue := []spotify.ID{song_ids[0]}
-	all_recs := map[spotify.ID]bool{}
-	all_recs[song_ids[0]] = true
 	for _, rec := range recomendationIds {
-		all_recs[rec] = true
-		queue = append(queue, rec)
+		exists, err := SongExists(db, rec)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err := db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(rec)))
+			if err != nil {
+				return err
+			}
+			queue = append(queue, rec)
+		}
 	}
 	_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
@@ -1074,10 +1157,17 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 		}
 		additionalRecsIds := []spotify.ID{}
 		for _, song := range additional_recs.Tracks {
-			if _, ok := all_recs[song.ID]; !ok {
-				all_recs[song.ID] = true
+			exists, err := SongExists(db, song.ID)
+			if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+			if !exists {
+				_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", string(song.ID)))
+				if err != nil {
+					return err
+				}
 				additionalRecsIds = append(additionalRecsIds, song.ID)
-				queue = append(queue, song.ID)
 			}
 		}
 		_, err = client.AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
@@ -1138,38 +1228,41 @@ func getDefaultDevice(ctx *gctx.Context, client *spotify.Client) (spotify.ID, er
 	}
 }
 
-func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client, name string) (*spotify.FullPlaylist, error) {
+func GetRadioPlaylist(ctx *gctx.Context, client *spotify.Client, name string) (*spotify.FullPlaylist, *sql.DB, error) {
 	configDir, _ := os.UserConfigDir()
 	playlistFile, err := os.ReadFile(filepath.Join(configDir, "gospt/radio.json"))
 	if errors.Is(err, os.ErrNotExist) {
 		return CreateRadioPlaylist(ctx, client, name)
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var playlist *spotify.FullPlaylist
 	err = json.Unmarshal(playlistFile, &playlist)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return playlist, nil
+	db, err := sql.Open("sqlite", filepath.Join(configDir, "gospt/radio.db"))
+	return playlist, db, nil
 }
 
-func CreateRadioPlaylist(ctx *gctx.Context, client *spotify.Client, name string) (*spotify.FullPlaylist, error) {
+func CreateRadioPlaylist(ctx *gctx.Context, client *spotify.Client, name string) (*spotify.FullPlaylist, *sql.DB, error) {
 	// private flag doesnt work
 	configDir, _ := os.UserConfigDir()
 	playlist, err := client.CreatePlaylistForUser(ctx, ctx.UserId, name+" - autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	raw, err := json.MarshalIndent(playlist, "", " ")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = os.WriteFile(filepath.Join(configDir, "gospt/radio.json"), raw, 0o644)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	return playlist, nil
+	db, err := sql.Open("sqlite", filepath.Join(configDir, "gospt/radio.db"))
+	db.QueryContext(ctx, "DROP TABLE IF EXISTS radio")
+	db.QueryContext(ctx, "CREATE TABLE IF NOT EXISTS radio (id string PRIMARY KEY)")
+	return playlist, db, nil
 }
