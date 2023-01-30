@@ -9,6 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -77,6 +78,8 @@ type mainModel struct {
 	artist        spotify.SimpleArtist
 	album         spotify.SimpleAlbum
 	searchResults *SearchResults
+	progress      progress.Model
+	playing       *spotify.CurrentlyPlaying
 	search        string
 }
 
@@ -413,26 +416,15 @@ func (m *mainModel) SelectItem() error {
 
 func (m mainModel) Init() tea.Cmd {
 	main_updates = make(chan *mainModel)
-	return nil
+	return Tick()
 }
 
-func (m *mainModel) Tick() {
-	ticker := time.NewTicker(5 * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
-				if playing != nil && playing.Playing && playing.Item != nil {
-					currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
-				}
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+type tickMsg time.Time
+
+func Tick() tea.Cmd {
+	return tea.Tick(time.Second*1, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
 
 func (m mainModel) View() string {
@@ -485,6 +477,22 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	// Handle user input
 	switch msg := msg.(type) {
+	case tickMsg:
+		playing, err := m.client.PlayerCurrentlyPlaying(m.ctx)
+		if err != nil {
+			return nil, nil
+		}
+		if playing != nil && playing.Playing && playing.Item != nil {
+			cmd := m.progress.SetPercent(float64(playing.Progress) / float64(playing.Item.Duration))
+			m.playing = playing
+			return m, tea.Batch(Tick(), cmd)
+		}
+		return m, Tick()
+	case progress.FrameMsg:
+		progressModel, cmd := m.progress.Update(msg)
+		m.progress = progressModel.(progress.Model)
+		currentlyPlaying = fmt.Sprintf("Now playing %s by %s - %s %s/%s ", m.playing.Item.Name, m.playing.Item.Artists[0].Name, m.progress.View(), (time.Duration(m.playing.Progress) * time.Millisecond).Round(time.Second), (time.Duration(m.playing.Item.Duration) * time.Millisecond).Round(time.Second))
+		return m, cmd
 	case tea.KeyMsg:
 		// quit
 		if msg.String() == "ctrl+c" {
@@ -576,15 +584,9 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, error) {
+	prog := progress.New(progress.WithColorProfile(2), progress.WithoutPercentage())
 	var err error
 	lipgloss.SetColorProfile(2)
-	playing, err := client.PlayerCurrentlyPlaying(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if playing != nil && playing.Playing && playing.Item != nil {
-		currentlyPlaying = "Now playing " + playing.Item.Name + " by " + playing.Item.Artists[0].Name
-	}
 	items := []list.Item{}
 	switch mode {
 	case Main:
@@ -604,13 +606,14 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, 
 		}
 	}
 	m := mainModel{
-		list:   list.New(items, list.NewDefaultDelegate(), 0, 0),
-		ctx:    ctx,
-		client: client,
-		mode:   mode,
+		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		ctx:      ctx,
+		client:   client,
+		mode:     mode,
+		progress: prog,
 	}
 	m.list.Title = "GOSPT"
-	go m.Tick()
+	Tick()
 	m.list.DisableQuitKeybindings()
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{

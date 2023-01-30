@@ -99,6 +99,7 @@ func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]lis
 		Desc:        "Search results",
 		SpotifyItem: result.Artists,
 	})
+
 	items = append(items, mainItem{
 		Name:        "Playlists",
 		Desc:        "Search results",
