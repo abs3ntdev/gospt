@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"gospt/src/gctx"
@@ -19,7 +20,8 @@ import (
 var (
 	P                *tea.Program
 	DocStyle         = lipgloss.NewStyle().Margin(0, 2)
-	currentlyPlaying string
+	currentlyPlaying *spotify.CurrentlyPlaying
+	playbackContext  string
 	main_updates     chan *mainModel
 	page             = 1
 )
@@ -69,23 +71,23 @@ func (i mainItem) Description() string { return i.Desc }
 func (i mainItem) FilterValue() string { return i.Title() + i.Desc }
 
 type mainModel struct {
-	list          list.Model
-	input         textinput.Model
-	ctx           *gctx.Context
-	client        *spotify.Client
-	mode          Mode
-	playlist      spotify.SimplePlaylist
-	artist        spotify.SimpleArtist
-	album         spotify.SimpleAlbum
-	searchResults *SearchResults
-	progress      progress.Model
-	playing       *spotify.CurrentlyPlaying
-	search        string
+	list            list.Model
+	input           textinput.Model
+	ctx             *gctx.Context
+	client          *spotify.Client
+	mode            Mode
+	playlist        spotify.SimplePlaylist
+	artist          spotify.SimpleArtist
+	album           spotify.SimpleAlbum
+	searchResults   *SearchResults
+	progress        progress.Model
+	playing         *spotify.CurrentlyPlaying
+	playbackContext string
+	search          string
 }
 
 func (m *mainModel) PlayRadio() {
-	currentlyPlaying = m.list.SelectedItem().(mainItem).Title()
-	m.list.NewStatusMessage("Starting radio for " + currentlyPlaying)
+	m.list.NewStatusMessage("Starting radio for " + m.list.SelectedItem().(mainItem).Title())
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
 	switch selectedItem.(type) {
 	case spotify.SimplePlaylist:
@@ -95,19 +97,28 @@ func (m *mainModel) PlayRadio() {
 		go HandleLibraryRadio(m.ctx, m.client)
 		return
 	case spotify.SimpleAlbum:
-		go HandleAlbumRadio(m.ctx, m.client, selectedItem.(spotify.SimpleAlbum).ID)
+		go HandleAlbumRadio(m.ctx, m.client, selectedItem.(spotify.SimpleAlbum))
 		return
 	case spotify.FullAlbum:
-		go HandleAlbumRadio(m.ctx, m.client, selectedItem.(spotify.FullAlbum).ID)
+		go HandleAlbumRadio(m.ctx, m.client, selectedItem.(spotify.FullAlbum).SimpleAlbum)
 		return
 	case spotify.SimpleArtist:
-		go HandleArtistRadio(m.ctx, m.client, selectedItem.(spotify.SimpleArtist).ID)
+		go HandleArtistRadio(m.ctx, m.client, selectedItem.(spotify.SimpleArtist))
 		return
 	case spotify.FullArtist:
-		go HandleArtistRadio(m.ctx, m.client, selectedItem.(spotify.FullArtist).ID)
+		go HandleArtistRadio(m.ctx, m.client, selectedItem.(spotify.FullArtist).SimpleArtist)
 		return
-	default:
-		go HandleRadio(m.ctx, m.client, m.list.SelectedItem().(mainItem).ID)
+	case spotify.SimpleTrack:
+		go HandleRadio(m.ctx, m.client, selectedItem.(spotify.SimpleTrack))
+		return
+	case spotify.FullTrack:
+		go HandleRadio(m.ctx, m.client, selectedItem.(spotify.FullTrack).SimpleTrack)
+		return
+	case spotify.PlaylistTrack:
+		go HandleRadio(m.ctx, m.client, selectedItem.(spotify.PlaylistTrack).Track.SimpleTrack)
+		return
+	case spotify.SavedTrack:
+		go HandleRadio(m.ctx, m.client, selectedItem.(spotify.SavedTrack).SimpleTrack)
 		return
 	}
 }
@@ -118,7 +129,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		return tea.Quit, nil
 	case Albums, Artists, Tracks, Playlist, Devices, Search:
 		m.mode = Main
-		m.list.NewStatusMessage("Setting view to main")
 		new_items, err := MainView(m.ctx, m.client)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -126,7 +136,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case Album:
 		m.mode = Albums
-		m.list.NewStatusMessage("Setting view to albums")
 		new_items, err := AlbumsView(m.ctx, m.client)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -135,7 +144,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case Artist:
 		m.mode = Artists
-		m.list.NewStatusMessage("Setting view to artists")
 		new_items, err := ArtistsView(m.ctx, m.client)
 		if err != nil {
 			return nil, err
@@ -143,7 +151,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case ArtistAlbum:
 		m.mode = Artist
-		m.list.NewStatusMessage("Opening " + m.artist.Name)
 		new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
 		if err != nil {
 			return nil, err
@@ -151,7 +158,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case SearchArtists, SearchTracks, SearchAlbums, SearchPlaylists:
 		m.mode = Search
-		m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
 		items, result, err := SearchView(m.ctx, m.client, m.search)
 		if err != nil {
 			return nil, err
@@ -160,7 +166,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(items)
 	case SearchArtist:
 		m.mode = SearchArtists
-		m.list.NewStatusMessage("Setting view to artists")
 		new_items, err := SearchArtistsView(m.ctx, m.client, m.searchResults.Artists)
 		if err != nil {
 			return nil, err
@@ -168,7 +173,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case SearchArtistAlbum:
 		m.mode = SearchArtist
-		m.list.NewStatusMessage("Opening " + m.artist.Name)
 		new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
 		if err != nil {
 			return nil, err
@@ -176,7 +180,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case SearchAlbum:
 		m.mode = SearchAlbums
-		m.list.NewStatusMessage("Setting view to albums")
 		new_items, err := SearchAlbumsView(m.ctx, m.client, m.searchResults.Albums)
 		if err != nil {
 			return nil, err
@@ -184,7 +187,6 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.list.SetItems(new_items)
 	case SearchPlaylist:
 		m.mode = SearchPlaylists
-		m.list.NewStatusMessage("Setting view to playlists")
 		new_items, err := SearchPlaylistsView(m.ctx, m.client, m.searchResults.Playlists)
 		if err != nil {
 			return nil, err
@@ -202,28 +204,37 @@ type SpotifyUrl struct {
 
 func (m *mainModel) CopyToClipboard() error {
 	item := m.list.SelectedItem().(mainItem).SpotifyItem
-	m.list.NewStatusMessage("Copying link to " + item.(mainItem).Title())
 	switch item.(type) {
 	case spotify.SimplePlaylist:
 		clipboard.WriteAll(item.(spotify.SimplePlaylist).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullPlaylist:
 		clipboard.WriteAll(item.(*spotify.FullPlaylist).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleAlbum:
 		clipboard.WriteAll(item.(spotify.SimpleAlbum).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullAlbum:
 		clipboard.WriteAll(item.(*spotify.FullAlbum).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleArtist:
 		clipboard.WriteAll(item.(spotify.SimpleArtist).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullArtist:
 		clipboard.WriteAll(item.(*spotify.FullArtist).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleTrack:
 		clipboard.WriteAll(item.(spotify.SimpleTrack).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.PlaylistTrack:
 		clipboard.WriteAll(item.(spotify.PlaylistTrack).Track.ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SavedTrack:
 		clipboard.WriteAll(item.(spotify.SavedTrack).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.FullTrack:
 		clipboard.WriteAll(item.(spotify.FullTrack).ExternalURLs["spotify"])
+		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	}
 	return nil
 }
@@ -234,7 +245,6 @@ func (m *mainModel) SelectItem() error {
 		switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistPage:
 			m.mode = SearchArtists
-			m.list.NewStatusMessage("Setting view to artists")
 			new_items, err := SearchArtistsView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullArtistPage))
 			if err != nil {
 				return err
@@ -243,7 +253,6 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.SimpleAlbumPage:
 			m.mode = SearchAlbums
-			m.list.NewStatusMessage("Setting view to albums")
 			new_items, err := SearchAlbumsView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimpleAlbumPage))
 			if err != nil {
 				return err
@@ -253,7 +262,6 @@ func (m *mainModel) SelectItem() error {
 		case *spotify.SimplePlaylistPage:
 			m.mode = SearchPlaylists
 			playlists := m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimplePlaylistPage)
-			m.list.NewStatusMessage("Setting view to playlist")
 			new_items, err := SearchPlaylistsView(m.ctx, m.client, playlists)
 			if err != nil {
 				return err
@@ -262,19 +270,16 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.FullTrackPage:
 			m.mode = SearchTracks
-			m.list.NewStatusMessage("Setting view to tracks")
 			new_items, err := SearchTracksView(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullTrackPage))
 			if err != nil {
 				return err
 			}
 			m.list.SetItems(new_items)
 			m.list.ResetSelected()
-			m.list.NewStatusMessage("Setting view to tracks")
 		}
 	case SearchArtists:
 		m.mode = SearchArtist
 		m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
-		m.list.NewStatusMessage("Opening " + m.artist.Name)
 		new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
 		if err != nil {
 			return err
@@ -284,7 +289,6 @@ func (m *mainModel) SelectItem() error {
 	case SearchArtist:
 		m.mode = SearchArtistAlbum
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
-		m.list.NewStatusMessage("Opening " + m.album.Name)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
 		if err != nil {
 			return err
@@ -294,7 +298,6 @@ func (m *mainModel) SelectItem() error {
 	case SearchAlbums:
 		m.mode = SearchAlbum
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
-		m.list.NewStatusMessage("Opening " + m.album.Name)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
 		if err != nil {
 			return err
@@ -305,7 +308,6 @@ func (m *mainModel) SelectItem() error {
 		m.mode = SearchPlaylist
 		playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
 		m.playlist = playlist
-		m.list.NewStatusMessage("Setting view to playlist " + playlist.Name)
 		new_items, err := PlaylistView(m.ctx, m.client, playlist)
 		if err != nil {
 			return err
@@ -316,7 +318,6 @@ func (m *mainModel) SelectItem() error {
 		switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistCursorPage:
 			m.mode = Artists
-			m.list.NewStatusMessage("Setting view to artists")
 			new_items, err := ArtistsView(m.ctx, m.client)
 			if err != nil {
 				return err
@@ -325,7 +326,6 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.SavedAlbumPage:
 			m.mode = Albums
-			m.list.NewStatusMessage("Setting view to albums")
 			new_items, err := AlbumsView(m.ctx, m.client)
 			if err != nil {
 				return err
@@ -336,7 +336,6 @@ func (m *mainModel) SelectItem() error {
 			m.mode = Playlist
 			playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
 			m.playlist = playlist
-			m.list.NewStatusMessage("Setting view to playlist " + playlist.Name)
 			new_items, err := PlaylistView(m.ctx, m.client, playlist)
 			if err != nil {
 				return err
@@ -345,19 +344,16 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.SavedTrackPage:
 			m.mode = Tracks
-			m.list.NewStatusMessage("Setting view to saved tracks")
 			new_items, err := SavedTracksView(m.ctx, m.client)
 			if err != nil {
 				return err
 			}
 			m.list.SetItems(new_items)
 			m.list.ResetSelected()
-			m.list.NewStatusMessage("Setting view to tracks")
 		}
 	case Albums:
 		m.mode = Album
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
-		m.list.NewStatusMessage("Opening " + m.album.Name)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
 		if err != nil {
 			return err
@@ -367,7 +363,6 @@ func (m *mainModel) SelectItem() error {
 	case Artist:
 		m.mode = ArtistAlbum
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
-		m.list.NewStatusMessage("Opening " + m.album.Name)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.client)
 		if err != nil {
 			return err
@@ -377,7 +372,6 @@ func (m *mainModel) SelectItem() error {
 	case Artists:
 		m.mode = Artist
 		m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
-		m.list.NewStatusMessage("Opening " + m.artist.Name)
 		new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.client)
 		if err != nil {
 			return err
@@ -385,20 +379,12 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case Album, ArtistAlbum, SearchArtistAlbum, SearchAlbum:
-		currentlyPlaying = m.list.SelectedItem().FilterValue()
-		m.list.NewStatusMessage("Playing " + currentlyPlaying)
 		go HandlePlayWithContext(m.ctx, m.client, &m.album.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.TotalPages))
 	case Playlist, SearchPlaylist:
-		currentlyPlaying = m.list.SelectedItem().FilterValue()
-		m.list.NewStatusMessage("Playing " + currentlyPlaying)
 		go HandlePlayWithContext(m.ctx, m.client, &m.playlist.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 	case Tracks:
-		currentlyPlaying = m.list.SelectedItem().FilterValue()
-		m.list.NewStatusMessage("Playing " + currentlyPlaying)
 		go HandlePlayLikedSong(m.ctx, m.client, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 	case SearchTracks:
-		currentlyPlaying = m.list.SelectedItem().FilterValue()
-		m.list.NewStatusMessage("Playing " + currentlyPlaying)
 		go HandlePlayTrack(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.FullTrack).ID)
 	case Devices:
 		go HandleSetDevice(m.ctx, m.client, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.PlayerDevice))
@@ -427,6 +413,31 @@ func Tick() tea.Cmd {
 	})
 }
 
+func (m *mainModel) TickPlayback() {
+	playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
+	if playing != nil && playing.Playing && playing.Item != nil {
+		currentlyPlaying = playing
+		playbackContext, _ = m.getContext(playing)
+	}
+	ticker := time.NewTicker(1 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				playing, _ := m.client.PlayerCurrentlyPlaying(m.ctx)
+				if playing != nil && playing.Playing && playing.Item != nil {
+					currentlyPlaying = playing
+					playbackContext, _ = m.getContext(playing)
+				}
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
 func (m mainModel) View() string {
 	if m.input.Focused() {
 		return DocStyle.Render(m.list.View() + "\n" + m.input.View())
@@ -436,7 +447,6 @@ func (m mainModel) View() string {
 
 func (m *mainModel) Typing(msg tea.KeyMsg) (bool, tea.Cmd) {
 	if msg.String() == "enter" {
-		m.list.NewStatusMessage("Setting view to search for " + m.input.Value())
 		items, result, err := SearchView(m.ctx, m.client, m.input.Value())
 		if err != nil {
 			fmt.Println(err.Error())
@@ -459,9 +469,33 @@ func (m *mainModel) Typing(msg tea.KeyMsg) (bool, tea.Cmd) {
 	return false, nil
 }
 
+func (m *mainModel) getContext(playing *spotify.CurrentlyPlaying) (string, error) {
+	context := playing.PlaybackContext
+	id := strings.Split(string(context.URI), ":")[2]
+	switch context.Type {
+	case "album":
+		album, err := m.client.GetAlbum(m.ctx, spotify.ID(id))
+		if err != nil {
+			return "", err
+		}
+		return album.Name, nil
+	case "playlist":
+		playlist, err := m.client.GetPlaylist(m.ctx, spotify.ID(id))
+		if err != nil {
+			return "", err
+		}
+		return playlist.Name, nil
+	case "artist":
+		artist, err := m.client.GetArtist(m.ctx, spotify.ID(id))
+		if err != nil {
+			return "", err
+		}
+		return artist.Name, nil
+	}
+	return "", nil
+}
+
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// Update Now Playing
-	m.list.NewStatusMessage(currentlyPlaying)
 	// Update list items from LoadMore
 	select {
 	case update := <-main_updates:
@@ -478,20 +512,27 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle user input
 	switch msg := msg.(type) {
 	case tickMsg:
-		playing, err := m.client.PlayerCurrentlyPlaying(m.ctx)
-		if err != nil {
-			return nil, nil
-		}
+		playing := currentlyPlaying
 		if playing != nil && playing.Playing && playing.Item != nil {
 			cmd := m.progress.SetPercent(float64(playing.Progress) / float64(playing.Item.Duration))
 			m.playing = playing
+			m.playbackContext = playbackContext
 			return m, tea.Batch(Tick(), cmd)
 		}
 		return m, Tick()
+
 	case progress.FrameMsg:
 		progressModel, cmd := m.progress.Update(msg)
 		m.progress = progressModel.(progress.Model)
-		currentlyPlaying = fmt.Sprintf("Now playing %s by %s - %s %s/%s ", m.playing.Item.Name, m.playing.Item.Artists[0].Name, m.progress.View(), (time.Duration(m.playing.Progress) * time.Millisecond).Round(time.Second), (time.Duration(m.playing.Item.Duration) * time.Millisecond).Round(time.Second))
+		m.list.NewStatusMessage(
+			fmt.Sprintf("Now playing %s by %s - %s %s/%s : %s",
+				m.playing.Item.Name,
+				m.playing.Item.Artists[0].Name,
+				m.progress.View(),
+				(time.Duration(m.playing.Progress) * time.Millisecond).Round(time.Second),
+				(time.Duration(m.playing.Item.Duration) * time.Millisecond).Round(time.Second),
+				m.playbackContext),
+		)
 		return m, cmd
 	case tea.KeyMsg:
 		// quit
@@ -613,6 +654,7 @@ func InitMain(ctx *gctx.Context, client *spotify.Client, mode Mode) (tea.Model, 
 		progress: prog,
 	}
 	m.list.Title = "GOSPT"
+	go m.TickPlayback()
 	Tick()
 	m.list.DisableQuitKeybindings()
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {

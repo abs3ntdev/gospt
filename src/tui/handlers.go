@@ -17,15 +17,15 @@ func HandlePlayWithContext(ctx *gctx.Context, client *spotify.Client, uri *spoti
 	}
 }
 
-func HandleRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
-	err := commands.RadioGivenSong(ctx, client, id, 0)
+func HandleRadio(ctx *gctx.Context, client *spotify.Client, song spotify.SimpleTrack) {
+	err := commands.RadioGivenSong(ctx, client, song, 0)
 	if err != nil {
 		return
 	}
 }
 
-func HandleAlbumRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
-	err := commands.RadioFromAlbum(ctx, client, id)
+func HandleAlbumRadio(ctx *gctx.Context, client *spotify.Client, album spotify.SimpleAlbum) {
+	err := commands.RadioFromAlbum(ctx, client, album)
 	if err != nil {
 		return
 	}
@@ -49,15 +49,15 @@ func HandleVolume(ctx *gctx.Context, client *spotify.Client, up bool) {
 	}
 }
 
-func HandleArtistRadio(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
-	err := commands.RadioGivenArtist(ctx, client, id)
+func HandleArtistRadio(ctx *gctx.Context, client *spotify.Client, artist spotify.SimpleArtist) {
+	err := commands.RadioGivenArtist(ctx, client, artist)
 	if err != nil {
 		return
 	}
 }
 
-func HandleAlbumArtist(ctx *gctx.Context, client *spotify.Client, id spotify.ID) {
-	err := commands.RadioGivenArtist(ctx, client, id)
+func HandleAlbumArtist(ctx *gctx.Context, client *spotify.Client, artist spotify.SimpleArtist) {
+	err := commands.RadioGivenArtist(ctx, client, artist)
 	if err != nil {
 		return
 	}
