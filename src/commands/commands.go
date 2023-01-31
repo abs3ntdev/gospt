@@ -591,7 +591,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 				trackGroups = []spotify.ID{}
 			}
 			trackGroups = append(trackGroups, item)
-			_, err = db.QueryContext(ctx, fmt.Sprintf("DELETE FROM radio WHERE id='%s'", string(item)))
 			if err != nil {
 				fmt.Println(err.Error())
 				return err

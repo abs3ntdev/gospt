@@ -19,7 +19,7 @@ import (
 
 var (
 	P                *tea.Program
-	DocStyle         = lipgloss.NewStyle().Margin(0, 2)
+	DocStyle         = lipgloss.NewStyle().Margin(0, 2).Border(lipgloss.DoubleBorder(), true, true, true, true)
 	currentlyPlaying *spotify.CurrentlyPlaying
 	playbackContext  string
 	main_updates     chan *mainModel
