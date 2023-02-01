@@ -131,14 +131,12 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.mode = Main
 		new_items, err := MainView(m.ctx, m.client)
 		if err != nil {
-			fmt.Println(err.Error())
 		}
 		m.list.SetItems(new_items)
 	case Album:
 		m.mode = Albums
 		new_items, err := AlbumsView(m.ctx, m.client)
 		if err != nil {
-			fmt.Println(err.Error())
 			return nil, err
 		}
 		m.list.SetItems(new_items)
@@ -393,7 +391,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.NewStatusMessage("Setting view to main")
 		new_items, err := MainView(m.ctx, m.client)
 		if err != nil {
-			fmt.Println(err.Error())
+			return err
 		}
 		m.list.SetItems(new_items)
 	}
@@ -449,7 +447,6 @@ func (m *mainModel) Typing(msg tea.KeyMsg) (bool, tea.Cmd) {
 	if msg.String() == "enter" {
 		items, result, err := SearchView(m.ctx, m.client, m.input.Value())
 		if err != nil {
-			fmt.Println(err.Error())
 			return false, tea.Quit
 		}
 		m.searchResults = result
@@ -574,7 +571,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.mode = Devices
 			new_items, err := DeviceView(m.ctx, m.client)
 			if err != nil {
-				fmt.Println(err.Error())
 				return m, tea.Quit
 			}
 			m.list.SetItems(new_items)
@@ -585,7 +581,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
 			msg, err := m.GoBack()
 			if err != nil {
-				fmt.Println(err)
+				return m, tea.Quit
 			}
 			m.list.ResetSelected()
 			return m, msg

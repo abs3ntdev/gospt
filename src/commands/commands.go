@@ -27,7 +27,6 @@ func SetVolume(ctx *gctx.Context, client *spotify.Client, vol int) error {
 func SetPosition(ctx *gctx.Context, client *spotify.Client, pos int) error {
 	err := client.Seek(ctx, pos)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	return nil
@@ -244,17 +243,14 @@ func PlaySongInPlaylist(ctx *gctx.Context, client *spotify.Client, context *spot
 func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) error {
 	err := ClearRadio(ctx, client)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	playlist, _, err := GetRadioPlaylist(ctx, client, "Saved Songs")
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	songs, err := client.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(position))
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	to_add := []spotify.ID{}
@@ -263,7 +259,6 @@ func PlayLikedSongs(ctx *gctx.Context, client *spotify.Client, position int) err
 	}
 	_, err = client.AddTracksToPlaylist(ctx, playlist.ID, to_add...)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	err = client.PlayOpt(ctx, &spotify.PlayOptions{
@@ -366,7 +361,6 @@ func RadioGivenArtist(ctx *gctx.Context, client *spotify.Client, artist spotify.
 		for _, song := range additional_recs.Tracks {
 			exists, err := SongExists(db, song.ID)
 			if err != nil {
-				fmt.Println(err.Error())
 				return err
 			}
 			if !exists {
@@ -475,7 +469,6 @@ func RadioGivenSong(ctx *gctx.Context, client *spotify.Client, song spotify.Simp
 		for _, song := range additional_recs.Tracks {
 			exists, err := SongExists(db, song.ID)
 			if err != nil {
-				fmt.Println(err.Error())
 				return err
 			}
 			if !exists {
@@ -554,11 +547,9 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 	to_remove := []spotify.ID{}
 	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, "")
 	if err != nil {
-		fmt.Println("ERROR AHHH", err.Error())
 	}
 
 	if status.PlaybackContext.URI != radioPlaylist.URI {
-		fmt.Println(status.PlaybackContext.URI, radioPlaylist.URI)
 		return nil
 	}
 
@@ -592,7 +583,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 			}
 			trackGroups = append(trackGroups, item)
 			if err != nil {
-				fmt.Println(err.Error())
 				return err
 			}
 		}
@@ -697,7 +687,6 @@ func RefillRadio(ctx *gctx.Context, client *spotify.Client) error {
 func ClearRadio(ctx *gctx.Context, client *spotify.Client) error {
 	radioPlaylist, db, err := GetRadioPlaylist(ctx, client, "")
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	err = client.UnfollowPlaylist(ctx, radioPlaylist.ID)
@@ -1158,7 +1147,6 @@ func RadioGivenList(ctx *gctx.Context, client *spotify.Client, song_ids []spotif
 		for _, song := range additional_recs.Tracks {
 			exists, err := SongExists(db, song.ID)
 			if err != nil {
-				fmt.Println(err.Error())
 				return err
 			}
 			if !exists {

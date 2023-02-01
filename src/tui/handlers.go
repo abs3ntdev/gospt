@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"fmt"
-
 	"gospt/src/commands"
 	"gospt/src/gctx"
 
@@ -73,7 +71,6 @@ func HandlePlaylistRadio(ctx *gctx.Context, client *spotify.Client, playlist spo
 func HandleLibraryRadio(ctx *gctx.Context, client *spotify.Client) {
 	err := commands.RadioFromSavedTracks(ctx, client)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 }
@@ -81,7 +78,6 @@ func HandleLibraryRadio(ctx *gctx.Context, client *spotify.Client) {
 func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int) {
 	err := commands.PlayLikedSongs(ctx, client, position)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 }
@@ -89,12 +85,10 @@ func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int
 func HandlePlayTrack(ctx *gctx.Context, client *spotify.Client, track spotify.ID) {
 	err := commands.QueueSong(ctx, client, track)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 	err = commands.Next(ctx, client, 1)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 }
@@ -103,7 +97,6 @@ func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.P
 	var err error
 	err = commands.SetDevice(ctx, client, player)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 }
