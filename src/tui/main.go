@@ -468,6 +468,10 @@ func (m *mainModel) Typing(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 func (m *mainModel) getContext(playing *spotify.CurrentlyPlaying) (string, error) {
 	context := playing.PlaybackContext
+	uri_split := strings.Split(string(context.URI), ":")
+	if len(uri_split) < 3 {
+		return "", fmt.Errorf("NO URI")
+	}
 	id := strings.Split(string(context.URI), ":")[2]
 	switch context.Type {
 	case "album":
