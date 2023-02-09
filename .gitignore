@@ -1,3 +1,11 @@
 bin/
 bin/*
 /gospt
+
+.idea/*
+.idea
+
+*.log
+*.out
+
+*.tmp
