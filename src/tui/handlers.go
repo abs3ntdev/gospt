@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"gospt/src/commands"
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
 )

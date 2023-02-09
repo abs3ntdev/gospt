@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gospt/src/commands"
-	"gospt/src/tui"
+	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
+	"gitea.asdf.cafe/abs3nt/gospt/src/tui"
 
 	"github.com/spf13/cobra"
 )

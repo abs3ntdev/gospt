@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/zmb3/spotify/v2"

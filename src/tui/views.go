@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"gospt/src/commands"
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/zmb3/spotify/v2"

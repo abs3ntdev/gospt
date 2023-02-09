@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
 	_ "modernc.org/sqlite"

@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gospt/src/auth"
-	"gospt/src/config"
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/auth"
+	"gitea.asdf.cafe/abs3nt/gospt/src/config"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
