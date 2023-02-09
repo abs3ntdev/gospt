@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"gospt/src/config"
-	"gospt/src/gctx"
+	"gitea.asdf.cafe/abs3nt/gospt/src/config"
+	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"

@@ -1,4 +1,4 @@
-module gospt
+module gitea.asdf.cafe/abs3nt/gospt
 
 go 1.19
 

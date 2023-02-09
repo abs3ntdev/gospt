@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gospt/src/commands"
+	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
 
 	"github.com/charmbracelet/bubbles/list"
 )

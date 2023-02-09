@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"gospt/src/tui"
+	"gitea.asdf.cafe/abs3nt/gospt/src/tui"
 
 	"github.com/spf13/cobra"
 )
