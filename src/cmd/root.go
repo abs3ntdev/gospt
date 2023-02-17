@@ -1,27 +1,24 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/auth"
 	"gitea.asdf.cafe/abs3nt/gospt/src/config"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/spf13/cobra"
-	"github.com/zmb3/spotify/v2"
 )
 
 var (
 	// Used for flags.
 	ctx         *gctx.Context
-	client      *spotify.Client
+	commands    *commands.Commands
 	cfgFile     string
 	userLicense string
 
@@ -52,20 +49,6 @@ func init() {
 	}
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initClient)
-}
-
-func initClient() {
-	var err error
-	ctx = gctx.NewContext(context.Background())
-	client, err = auth.GetClient(ctx)
-	if err != nil {
-		panic(err)
-	}
-	currentUser, err := client.CurrentUser(ctx)
-	if err != nil {
-		panic(err)
-	}
-	ctx.UserId = currentUser.ID
 }
 
 func initConfig() {
