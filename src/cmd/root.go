@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	cmds "gitea.asdf.cafe/abs3nt/gospt/src/commands"
 
 	"gitea.asdf.cafe/abs3nt/gospt/src/config"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
@@ -19,7 +22,7 @@ import (
 var (
 	// Used for flags.
 	ctx         *gctx.Context
-	commands    *commands.Commands
+	commands    *cmds.Commands
 	cfgFile     string
 	userLicense string
 	verbose     bool
@@ -51,14 +54,14 @@ func init() {
 		}
 	}
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
-
 	cobra.OnInitialize(func() {
 		if verbose {
 			zlog.SetGlobalLevel(zlog.TraceLevel)
 		}
 	})
-	cobra.OnInitialize(initConfig, initClient)
-
+	ctx = gctx.NewContext(context.Background())
+	commands = &cmds.Commands{Context: ctx}
+	cobra.OnInitialize(initConfig)
 }
 
 func initConfig() {

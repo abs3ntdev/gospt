@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var playCmd = &cobra.Command{
 	Short:   "Plays spotify",
 	Long:    `Plays queued song on spotify, uses last used device and activates it if needed`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Play(ctx, client)
+		commands.Play(ctx)
 	},
 }

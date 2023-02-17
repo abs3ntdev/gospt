@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -25,8 +24,9 @@ import (
 )
 
 type Commands struct {
-	cl *spotify.Client
-	mu sync.RWMutex
+	Context *gctx.Context
+	cl      *spotify.Client
+	mu      sync.RWMutex
 
 	user string
 }
@@ -48,7 +48,7 @@ func (c *Commands) User() string {
 }
 
 func (c *Commands) connectClient() *spotify.Client {
-	ctx := gctx.NewContext(context.Background())
+	ctx := c.Context
 	client, err := auth.GetClient(ctx)
 	if err != nil {
 		panic(err)
@@ -58,7 +58,7 @@ func (c *Commands) connectClient() *spotify.Client {
 		panic(err)
 	}
 	c.user = currentUser.ID
-	return &spotify.Client{}
+	return client
 }
 
 func (c *Commands) SetVolume(ctx *gctx.Context, vol int) error {

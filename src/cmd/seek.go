@@ -3,8 +3,6 @@ package cmd
 import (
 	"strconv"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +18,7 @@ var seekCmd = &cobra.Command{
 	Long:    `Seeks forward or backward, or seeks to a given position in seconds`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if args[0] == "forward" || args[0] == "f" {
-			err := commands.Seek(ctx, client, true)
+			err := commands.Seek(ctx, true)
 			if err != nil {
 				return err
 			}
@@ -28,7 +26,7 @@ var seekCmd = &cobra.Command{
 		}
 
 		if args[0] == "backward" || args[0] == "b" {
-			err := commands.Seek(ctx, client, false)
+			err := commands.Seek(ctx, false)
 			if err != nil {
 				return err
 			}
@@ -40,7 +38,7 @@ var seekCmd = &cobra.Command{
 			return err
 		}
 		pos = pos * 1000
-		err = commands.SetPosition(ctx, client, pos)
+		err = commands.SetPosition(ctx, pos)
 		if err != nil {
 			return err
 		}

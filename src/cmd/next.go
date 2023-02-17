@@ -3,8 +3,6 @@ package cmd
 import (
 	"strconv"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +25,6 @@ var nextCmd = &cobra.Command{
 				return err
 			}
 		}
-		return commands.Next(ctx, client, skipAmt)
+		return commands.Next(ctx, skipAmt)
 	},
 }

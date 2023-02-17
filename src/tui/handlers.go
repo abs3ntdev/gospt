@@ -7,95 +7,95 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func HandlePlayWithContext(ctx *gctx.Context, client *spotify.Client, uri *spotify.URI, pos int) {
+func HandlePlayWithContext(ctx *gctx.Context, commands *commands.Commands, uri *spotify.URI, pos int) {
 	var err error
-	err = commands.PlaySongInPlaylist(ctx, client, uri, pos)
+	err = commands.PlaySongInPlaylist(ctx, uri, pos)
 	if err != nil {
 		return
 	}
 }
 
-func HandleRadio(ctx *gctx.Context, client *spotify.Client, song spotify.SimpleTrack) {
-	err := commands.RadioGivenSong(ctx, client, song, 0)
+func HandleRadio(ctx *gctx.Context, commands *commands.Commands, song spotify.SimpleTrack) {
+	err := commands.RadioGivenSong(ctx, song, 0)
 	if err != nil {
 		return
 	}
 }
 
-func HandleAlbumRadio(ctx *gctx.Context, client *spotify.Client, album spotify.SimpleAlbum) {
-	err := commands.RadioFromAlbum(ctx, client, album)
+func HandleAlbumRadio(ctx *gctx.Context, commands *commands.Commands, album spotify.SimpleAlbum) {
+	err := commands.RadioFromAlbum(ctx, album)
 	if err != nil {
 		return
 	}
 }
 
-func HandleSeek(ctx *gctx.Context, client *spotify.Client, fwd bool) {
-	err := commands.Seek(ctx, client, fwd)
+func HandleSeek(ctx *gctx.Context, commands *commands.Commands, fwd bool) {
+	err := commands.Seek(ctx, fwd)
 	if err != nil {
 		return
 	}
 }
 
-func HandleVolume(ctx *gctx.Context, client *spotify.Client, up bool) {
+func HandleVolume(ctx *gctx.Context, commands *commands.Commands, up bool) {
 	vol := 10
 	if !up {
 		vol = -10
 	}
-	err := commands.ChangeVolume(ctx, client, vol)
+	err := commands.ChangeVolume(ctx, vol)
 	if err != nil {
 		return
 	}
 }
 
-func HandleArtistRadio(ctx *gctx.Context, client *spotify.Client, artist spotify.SimpleArtist) {
-	err := commands.RadioGivenArtist(ctx, client, artist)
+func HandleArtistRadio(ctx *gctx.Context, commands *commands.Commands, artist spotify.SimpleArtist) {
+	err := commands.RadioGivenArtist(ctx, artist)
 	if err != nil {
 		return
 	}
 }
 
-func HandleAlbumArtist(ctx *gctx.Context, client *spotify.Client, artist spotify.SimpleArtist) {
-	err := commands.RadioGivenArtist(ctx, client, artist)
+func HandleAlbumArtist(ctx *gctx.Context, commands *commands.Commands, artist spotify.SimpleArtist) {
+	err := commands.RadioGivenArtist(ctx, artist)
 	if err != nil {
 		return
 	}
 }
 
-func HandlePlaylistRadio(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) {
-	err := commands.RadioFromPlaylist(ctx, client, playlist)
+func HandlePlaylistRadio(ctx *gctx.Context, commands *commands.Commands, playlist spotify.SimplePlaylist) {
+	err := commands.RadioFromPlaylist(ctx, playlist)
 	if err != nil {
 		return
 	}
 }
 
-func HandleLibraryRadio(ctx *gctx.Context, client *spotify.Client) {
-	err := commands.RadioFromSavedTracks(ctx, client)
+func HandleLibraryRadio(ctx *gctx.Context, commands *commands.Commands) {
+	err := commands.RadioFromSavedTracks(ctx)
 	if err != nil {
 		return
 	}
 }
 
-func HandlePlayLikedSong(ctx *gctx.Context, client *spotify.Client, position int) {
-	err := commands.PlayLikedSongs(ctx, client, position)
+func HandlePlayLikedSong(ctx *gctx.Context, commands *commands.Commands, position int) {
+	err := commands.PlayLikedSongs(ctx, position)
 	if err != nil {
 		return
 	}
 }
 
-func HandlePlayTrack(ctx *gctx.Context, client *spotify.Client, track spotify.ID) {
-	err := commands.QueueSong(ctx, client, track)
+func HandlePlayTrack(ctx *gctx.Context, commands *commands.Commands, track spotify.ID) {
+	err := commands.QueueSong(ctx, track)
 	if err != nil {
 		return
 	}
-	err = commands.Next(ctx, client, 1)
+	err = commands.Next(ctx, 1)
 	if err != nil {
 		return
 	}
 }
 
-func HandleSetDevice(ctx *gctx.Context, client *spotify.Client, player spotify.PlayerDevice) {
+func HandleSetDevice(ctx *gctx.Context, commands *commands.Commands, player spotify.PlayerDevice) {
 	var err error
-	err = commands.SetDevice(ctx, client, player)
+	err = commands.SetDevice(ctx, player)
 	if err != nil {
 		return
 	}

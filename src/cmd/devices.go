@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +13,6 @@ var devicesCmd = &cobra.Command{
 	Short: "Prints out devices",
 	Long:  `Prints out devices`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Devices(ctx, client)
+		commands.Devices(ctx)
 	},
 }

@@ -3,8 +3,6 @@ package cmd
 import (
 	"strconv"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +18,7 @@ var volumeCmd = &cobra.Command{
 	Long:    `Sets the volume to the given percent [0-100] or increases/decreases by 5 percent if you say up or down`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if args[0] == "up" {
-			err := commands.ChangeVolume(ctx, client, 5)
+			err := commands.ChangeVolume(ctx, 5)
 			if err != nil {
 				return err
 			}
@@ -28,7 +26,7 @@ var volumeCmd = &cobra.Command{
 		}
 
 		if args[0] == "down" {
-			err := commands.ChangeVolume(ctx, client, -5)
+			err := commands.ChangeVolume(ctx, -5)
 			if err != nil {
 				return err
 			}
@@ -39,7 +37,7 @@ var volumeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = commands.SetVolume(ctx, client, vol)
+		err = commands.SetVolume(ctx, vol)
 		if err != nil {
 			return err
 		}

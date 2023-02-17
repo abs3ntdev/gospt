@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var playurlCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.ExactArgs(1)),
 	Long:  `Plays song from provided url`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.PlayUrl(ctx, client, args)
+		commands.PlayUrl(ctx, args)
 	},
 }

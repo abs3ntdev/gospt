@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
 	"gitea.asdf.cafe/abs3nt/gospt/src/tui"
 
 	"github.com/spf13/cobra"
@@ -20,12 +19,12 @@ var tracksCmd = &cobra.Command{
 	Long:  `Uses TUI to open a list of saved tracks`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configDir, _ := os.UserConfigDir()
-		if commands.ActiveDeviceExists(ctx, client) {
-			return tui.StartTea(ctx, client, "tracks")
+		if commands.ActiveDeviceExists(ctx) {
+			return tui.StartTea(ctx, commands, "tracks")
 		}
 		if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err != nil {
-			return tui.StartTea(ctx, client, "devices")
+			return tui.StartTea(ctx, commands, "devices")
 		}
-		return tui.StartTea(ctx, client, "tracks")
+		return tui.StartTea(ctx, commands, "tracks")
 	},
 }

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var radioCmd = &cobra.Command{
 	Short:   "Starts radio",
 	Long:    `Starts radio`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return commands.Radio(ctx, client)
+		return commands.Radio(ctx)
 	},
 }

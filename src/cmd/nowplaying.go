@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var nowPlayingCmd = &cobra.Command{
 	Short:   "Shows song and artist of currently playing song",
 	Long:    `Shows song and artist of currently playing song, useful for scripting`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.NowPlaying(ctx, client)
+		commands.NowPlaying(ctx)
 	},
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +14,7 @@ var linkCmd = &cobra.Command{
 	Short:   "Print link to currently playing song",
 	Long:    `Print link to currently playing song`,
 	Run: func(cmd *cobra.Command, args []string) {
-		link, err := commands.Link(ctx, client)
+		link, err := commands.Link(ctx)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/charmbracelet/bubbles/list"
 )
 
 func (m *mainModel) LoadMoreItems() {
 	switch m.mode {
 	case "artist":
-		albums, err := commands.ArtistAlbums(m.ctx, m.client, m.artist.ID, (page + 1))
+		albums, err := m.commands.ArtistAlbums(m.ctx, m.artist.ID, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -32,7 +30,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "artists":
-		artists, err := commands.UserArtists(m.ctx, m.client, (page + 1))
+		artists, err := m.commands.UserArtists(m.ctx, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -52,7 +50,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "album":
-		tracks, err := commands.AlbumTracks(m.ctx, m.client, m.album.ID, (page + 1))
+		tracks, err := m.commands.AlbumTracks(m.ctx, m.album.ID, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -73,7 +71,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "albums":
-		albums, err := commands.UserAlbums(m.ctx, m.client, (page + 1))
+		albums, err := m.commands.UserAlbums(m.ctx, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -93,7 +91,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "main":
-		playlists, err := commands.Playlists(m.ctx, m.client, (page + 1))
+		playlists, err := m.commands.Playlists(m.ctx, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -112,7 +110,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "playlist":
-		tracks, err := commands.PlaylistTracks(m.ctx, m.client, m.playlist.ID, (page + 1))
+		tracks, err := m.commands.PlaylistTracks(m.ctx, m.playlist.ID, (page + 1))
 		page++
 		if err != nil {
 			return
@@ -133,7 +131,7 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "tracks":
-		tracks, err := commands.TrackList(m.ctx, m.client, (page + 1))
+		tracks, err := m.commands.TrackList(m.ctx, (page + 1))
 		page++
 		if err != nil {
 			return

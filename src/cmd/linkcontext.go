@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +14,7 @@ var linkContextCmd = &cobra.Command{
 	Short:   "Get url to current context(album, playlist)",
 	Long:    `Get url to current context(album, playlist)`,
 	Run: func(cmd *cobra.Command, args []string) {
-		link, err := commands.LinkContext(ctx, client)
+		link, err := commands.LinkContext(ctx)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
