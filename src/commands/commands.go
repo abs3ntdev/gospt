@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"gitea.asdf.cafe/abs3nt/gospt/src/cache"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
@@ -870,11 +871,26 @@ func LinkContext(ctx *gctx.Context, client *spotify.Client) (string, error) {
 }
 
 func NowPlaying(ctx *gctx.Context, client *spotify.Client) error {
-	current, err := client.PlayerCurrentlyPlaying(ctx)
+	song, err := cache.DefaultCache().GetOrDo("now_playing", func() (string, error) {
+		current, err := client.PlayerCurrentlyPlaying(ctx)
+		if err != nil {
+			return "", err
+		}
+		str := FormatSong(current)
+		return str, nil
+	}, 5*time.Second)
 	if err != nil {
 		return err
 	}
-	return PrintPlaying(current)
+	fmt.Println(song)
+	return nil
+}
+func FormatSong(current *spotify.CurrentlyPlaying) string {
+	icon := "▶"
+	if !current.Playing {
+		icon = "⏸"
+	}
+	return fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name)
 }
 
 func Shuffle(ctx *gctx.Context, client *spotify.Client) error {
@@ -932,15 +948,6 @@ func PrintState(state *spotify.PlayerState) error {
 		return err
 	}
 	fmt.Println(string(out))
-	return nil
-}
-
-func PrintPlaying(current *spotify.CurrentlyPlaying) error {
-	icon := "▶"
-	if !current.Playing {
-		icon = "⏸"
-	}
-	fmt.Println(fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name))
 	return nil
 }
 

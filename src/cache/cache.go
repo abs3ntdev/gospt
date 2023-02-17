@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"tuxpa.in/a/zlog/log"
 )
 
 type Cache struct {
@@ -34,12 +36,12 @@ func (c *Cache) load() (map[string]CacheEntry, error) {
 	return out, nil
 }
 
-func (c *Cache) save(map[string]CacheEntry) error {
-	out := map[string]CacheEntry{}
-	payload, err := json.Marshal(out)
+func (c *Cache) save(m map[string]CacheEntry) error {
+	payload, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
+	log.Trace().Str("tosave", string(payload)).Msg("saving cache")
 	err = os.WriteFile(c.Root, payload, 0640)
 	if err != nil {
 		return err
@@ -50,6 +52,7 @@ func (c *Cache) save(map[string]CacheEntry) error {
 func (c *Cache) GetOrDo(key string, do func() (string, error), ttl time.Duration) (string, error) {
 	conf, err := c.load()
 	if err != nil {
+		log.Trace().Err(err).Msg("cache failed read")
 		return c.Do(key, do, ttl)
 	}
 	val, ok := conf[key]
@@ -72,6 +75,7 @@ func (c *Cache) Do(key string, do func() (string, error), ttl time.Duration) (st
 	}
 	return c.Put(key, res, ttl)
 }
+
 func (c *Cache) Put(key string, value string, ttl time.Duration) (string, error) {
 	conf, err := c.load()
 	if err != nil {
@@ -81,5 +85,14 @@ func (c *Cache) Put(key string, value string, ttl time.Duration) (string, error)
 		Expire: time.Now().Add(ttl),
 		Value:  value,
 	}
+	log.Trace().Str("key", key).Str("val", value).Msg("saving new cache key")
+	err = c.save(conf)
+	if err != nil {
+		log.Trace().Err(err).Msg("cache failed save")
+	}
 	return value, nil
+}
+
+func (c *Cache) Clear() error {
+	return os.Remove(c.Root)
 }

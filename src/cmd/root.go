@@ -11,6 +11,7 @@ import (
 	"gitea.asdf.cafe/abs3nt/gospt/src/auth"
 	"gitea.asdf.cafe/abs3nt/gospt/src/config"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
+	"tuxpa.in/a/zlog"
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
@@ -24,6 +25,7 @@ var (
 	client      *spotify.Client
 	cfgFile     string
 	userLicense string
+	verbose     bool
 
 	rootCmd = &cobra.Command{
 		Use:   "gospt",
@@ -45,13 +47,21 @@ func Execute(defCmd string) {
 }
 
 func init() {
+	zlog.SetGlobalLevel(zlog.DebugLevel)
 	if len(os.Args) > 1 {
 		if os.Args[1] == "completion" || os.Args[1] == "__complete" {
 			return
 		}
 	}
-	cobra.OnInitialize(initConfig)
-	cobra.OnInitialize(initClient)
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
+
+	cobra.OnInitialize(func() {
+		if verbose {
+			zlog.SetGlobalLevel(zlog.TraceLevel)
+		}
+	})
+	cobra.OnInitialize(initConfig, initClient)
+
 }
 
 func initClient() {
