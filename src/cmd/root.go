@@ -8,22 +8,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/auth"
+	cmds "gitea.asdf.cafe/abs3nt/gospt/src/commands"
+
 	"gitea.asdf.cafe/abs3nt/gospt/src/config"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
+	"tuxpa.in/a/zlog"
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/spf13/cobra"
-	"github.com/zmb3/spotify/v2"
 )
 
 var (
 	// Used for flags.
 	ctx         *gctx.Context
-	client      *spotify.Client
+	commands    *cmds.Commands
 	cfgFile     string
 	userLicense string
+	verbose     bool
 
 	rootCmd = &cobra.Command{
 		Use:   "gospt",
@@ -45,27 +47,21 @@ func Execute(defCmd string) {
 }
 
 func init() {
+	zlog.SetGlobalLevel(zlog.DebugLevel)
 	if len(os.Args) > 1 {
 		if os.Args[1] == "completion" || os.Args[1] == "__complete" {
 			return
 		}
 	}
-	cobra.OnInitialize(initConfig)
-	cobra.OnInitialize(initClient)
-}
-
-func initClient() {
-	var err error
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
+	cobra.OnInitialize(func() {
+		if verbose {
+			zlog.SetGlobalLevel(zlog.TraceLevel)
+		}
+	})
 	ctx = gctx.NewContext(context.Background())
-	client, err = auth.GetClient(ctx)
-	if err != nil {
-		panic(err)
-	}
-	currentUser, err := client.CurrentUser(ctx)
-	if err != nil {
-		panic(err)
-	}
-	ctx.UserId = currentUser.ID
+	commands = &cmds.Commands{Context: ctx}
+	cobra.OnInitialize(initConfig)
 }
 
 func initConfig() {

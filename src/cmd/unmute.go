@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +13,7 @@ var unmuteCmd = &cobra.Command{
 	Short: "unmutes playback",
 	Long:  `unmutes the spotify device, playback will continue`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := commands.SetVolume(ctx, client, 100)
+		err := commands.SetVolume(ctx, 100)
 		if err != nil {
 			return err
 		}

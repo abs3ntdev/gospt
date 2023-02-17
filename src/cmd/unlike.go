@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var unlikeCmd = &cobra.Command{
 	Short:   "unlikes song",
 	Long:    `unlikes song`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Unlike(ctx, client)
+		commands.Unlike(ctx)
 	},
 }

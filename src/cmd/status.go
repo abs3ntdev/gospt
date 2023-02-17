@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +13,6 @@ var statusCmd = &cobra.Command{
 	Short: "Returns player status in json",
 	Long:  `Returns all player status in json, useful for scripting`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Status(ctx, client)
+		commands.Status(ctx)
 	},
 }

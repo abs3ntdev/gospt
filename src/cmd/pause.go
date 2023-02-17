@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var pauseCmd = &cobra.Command{
 	Aliases: []string{"pa"},
 	Long:    `Pauses currently playing song on spotify`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Pause(ctx, client)
+		commands.Pause(ctx)
 	},
 }

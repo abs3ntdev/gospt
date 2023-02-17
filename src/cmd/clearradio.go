@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +13,6 @@ var clearRadioCmd = &cobra.Command{
 	Short: "Wipes the radio playlist and creates an empty one",
 	Long:  `Wipes the radio playlist and creates an empty one, mostly for debugging or if something goes wrong`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.ClearRadio(ctx, client)
+		commands.ClearRadio(ctx)
 	},
 }

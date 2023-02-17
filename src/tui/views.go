@@ -12,9 +12,9 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func DeviceView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+func DeviceView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	devices, err := client.PlayerDevices(ctx)
+	devices, err := commands.Client().PlayerDevices(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -28,9 +28,9 @@ func DeviceView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 	return items, nil
 }
 
-func PlaylistView(ctx *gctx.Context, client *spotify.Client, playlist spotify.SimplePlaylist) ([]list.Item, error) {
+func PlaylistView(ctx *gctx.Context, commands *commands.Commands, playlist spotify.SimplePlaylist) ([]list.Item, error) {
 	items := []list.Item{}
-	tracks, err := commands.PlaylistTracks(ctx, client, playlist.ID, 1)
+	tracks, err := commands.PlaylistTracks(ctx, playlist.ID, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +47,9 @@ func PlaylistView(ctx *gctx.Context, client *spotify.Client, playlist spotify.Si
 	return items, nil
 }
 
-func ArtistsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+func ArtistsView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	artists, err := commands.UserArtists(ctx, client, 1)
+	artists, err := commands.UserArtists(ctx, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func ArtistsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error)
 	return items, nil
 }
 
-func SearchArtistsView(ctx *gctx.Context, client *spotify.Client, artists *spotify.FullArtistPage) ([]list.Item, error) {
+func SearchArtistsView(ctx *gctx.Context, commands *commands.Commands, artists *spotify.FullArtistPage) ([]list.Item, error) {
 	items := []list.Item{}
 	for _, artist := range artists.Artists {
 		items = append(items, mainItem{
@@ -77,10 +77,10 @@ func SearchArtistsView(ctx *gctx.Context, client *spotify.Client, artists *spoti
 	return items, nil
 }
 
-func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]list.Item, *SearchResults, error) {
+func SearchView(ctx *gctx.Context, commands *commands.Commands, search string) ([]list.Item, *SearchResults, error) {
 	items := []list.Item{}
 
-	result, err := commands.Search(ctx, client, search, 1)
+	result, err := commands.Search(ctx, search, 1)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -114,9 +114,9 @@ func SearchView(ctx *gctx.Context, client *spotify.Client, search string) ([]lis
 	return items, results, nil
 }
 
-func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+func AlbumsView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	albums, err := commands.UserAlbums(ctx, client, 1)
+	albums, err := commands.UserAlbums(ctx, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func AlbumsView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) 
 	return items, nil
 }
 
-func SearchPlaylistsView(ctx *gctx.Context, client *spotify.Client, playlists *spotify.SimplePlaylistPage) ([]list.Item, error) {
+func SearchPlaylistsView(ctx *gctx.Context, commands *commands.Commands, playlists *spotify.SimplePlaylistPage) ([]list.Item, error) {
 	items := []list.Item{}
 	for _, playlist := range playlists.Playlists {
 		items = append(items, mainItem{
@@ -143,7 +143,7 @@ func SearchPlaylistsView(ctx *gctx.Context, client *spotify.Client, playlists *s
 	return items, nil
 }
 
-func SearchAlbumsView(ctx *gctx.Context, client *spotify.Client, albums *spotify.SimpleAlbumPage) ([]list.Item, error) {
+func SearchAlbumsView(ctx *gctx.Context, commands *commands.Commands, albums *spotify.SimpleAlbumPage) ([]list.Item, error) {
 	items := []list.Item{}
 	for _, album := range albums.Albums {
 		items = append(items, mainItem{
@@ -156,9 +156,9 @@ func SearchAlbumsView(ctx *gctx.Context, client *spotify.Client, albums *spotify
 	return items, nil
 }
 
-func ArtistAlbumsView(ctx *gctx.Context, album spotify.ID, client *spotify.Client) ([]list.Item, error) {
+func ArtistAlbumsView(ctx *gctx.Context, album spotify.ID, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	albums, err := commands.ArtistAlbums(ctx, client, album, 1)
+	albums, err := commands.ArtistAlbums(ctx, album, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -173,9 +173,9 @@ func ArtistAlbumsView(ctx *gctx.Context, album spotify.ID, client *spotify.Clien
 	return items, err
 }
 
-func AlbumTracksView(ctx *gctx.Context, album spotify.ID, client *spotify.Client) ([]list.Item, error) {
+func AlbumTracksView(ctx *gctx.Context, album spotify.ID, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	tracks, err := commands.AlbumTracks(ctx, client, album, 1)
+	tracks, err := commands.AlbumTracks(ctx, album, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func AlbumTracksView(ctx *gctx.Context, album spotify.ID, client *spotify.Client
 	return items, err
 }
 
-func SearchTracksView(ctx *gctx.Context, client *spotify.Client, tracks *spotify.FullTrackPage) ([]list.Item, error) {
+func SearchTracksView(ctx *gctx.Context, commands *commands.Commands, tracks *spotify.FullTrackPage) ([]list.Item, error) {
 	items := []list.Item{}
 	for _, track := range tracks.Tracks {
 		items = append(items, mainItem{
@@ -207,9 +207,9 @@ func SearchTracksView(ctx *gctx.Context, client *spotify.Client, tracks *spotify
 	return items, nil
 }
 
-func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+func SavedTracksView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
-	tracks, err := commands.TrackList(ctx, client, 1)
+	tracks, err := commands.TrackList(ctx, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func SavedTracksView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, er
 	return items, err
 }
 
-func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
+func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	var wg sync.WaitGroup
 	var saved_items *spotify.SavedTrackPage
 	var playlists *spotify.SimplePlaylistPage
@@ -237,7 +237,7 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		saved_items, err = commands.TrackList(ctx, client, 1)
+		saved_items, err = commands.TrackList(ctx, 1)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -248,7 +248,7 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		playlists, err = commands.Playlists(ctx, client, 1)
+		playlists, err = commands.Playlists(ctx, 1)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -259,7 +259,7 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		artists, err = commands.UserArtists(ctx, client, 1)
+		artists, err = commands.UserArtists(ctx, 1)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -270,7 +270,7 @@ func MainView(ctx *gctx.Context, client *spotify.Client) ([]list.Item, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		albums, err = commands.UserAlbums(ctx, client, 1)
+		albums, err = commands.UserAlbums(ctx, 1)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

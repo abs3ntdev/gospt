@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var likeCmd = &cobra.Command{
 	Short:   "Likes song",
 	Long:    `Likes song`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Like(ctx, client)
+		commands.Like(ctx)
 	},
 }

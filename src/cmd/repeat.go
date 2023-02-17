@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +13,6 @@ var repeatCmd = &cobra.Command{
 	Short: "Toggles repeat",
 	Long:  `Switches between repeating your current context or not, spotifyd does not support single track loops`,
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.Repeat(ctx, client)
+		commands.Repeat(ctx)
 	},
 }

@@ -3,15 +3,15 @@ package tui
 import (
 	"fmt"
 
+	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/zmb3/spotify/v2"
 )
 
 // StartTea the entry point for the UI. Initializes the model.
-func StartTea(ctx *gctx.Context, client *spotify.Client, mode string) error {
-	m, err := InitMain(ctx, client, Mode(mode))
+func StartTea(ctx *gctx.Context, cmd *commands.Commands, mode string) error {
+	m, err := InitMain(ctx, cmd, Mode(mode))
 	if err != nil {
 		fmt.Println("UH OH")
 	}
