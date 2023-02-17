@@ -13,7 +13,8 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/zmb3/spotify/v2 v2.3.1
 	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
-	modernc.org/sqlite v1.20.3
+	modernc.org/sqlite v1.20.4
+	tuxpa.in/a/zlog v1.60.0
 )
 
 require (
@@ -27,6 +28,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
@@ -36,6 +38,7 @@ require (
 	github.com/muesli/termenv v0.13.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rs/zerolog v1.28.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/mod v0.3.0 // indirect

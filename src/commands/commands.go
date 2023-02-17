@@ -17,6 +17,7 @@ import (
 
 	"gfx.cafe/util/go/frand"
 	"gitea.asdf.cafe/abs3nt/gospt/src/auth"
+	"gitea.asdf.cafe/abs3nt/gospt/src/cache"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/zmb3/spotify/v2"
@@ -26,6 +27,8 @@ import (
 type Commands struct {
 	cl *spotify.Client
 	mu sync.RWMutex
+
+	user string
 }
 
 func (c *Commands) Client() *spotify.Client {
@@ -39,6 +42,11 @@ func (c *Commands) Client() *spotify.Client {
 	return c.cl
 }
 
+func (c *Commands) User() string {
+	c.Client()
+	return c.user
+}
+
 func (c *Commands) connectClient() *spotify.Client {
 	ctx := gctx.NewContext(context.Background())
 	client, err := auth.GetClient(ctx)
@@ -49,7 +57,7 @@ func (c *Commands) connectClient() *spotify.Client {
 	if err != nil {
 		panic(err)
 	}
-	ctx.UserId = currentUser.ID
+	c.user = currentUser.ID
 	return &spotify.Client{}
 }
 
@@ -736,7 +744,7 @@ func (c *Commands) Devices(ctx *gctx.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.PrintDevices(devices)
+	return PrintDevices(devices)
 }
 
 func (c *Commands) Pause(ctx *gctx.Context) error {
@@ -901,11 +909,27 @@ func (c *Commands) LinkContext(ctx *gctx.Context) (string, error) {
 }
 
 func (c *Commands) NowPlaying(ctx *gctx.Context) error {
-	current, err := c.Client().PlayerCurrentlyPlaying(ctx)
+	song, err := cache.DefaultCache().GetOrDo("now_playing", func() (string, error) {
+		current, err := c.Client().PlayerCurrentlyPlaying(ctx)
+		if err != nil {
+			return "", err
+		}
+		str := FormatSong(current)
+		return str, nil
+	}, 5*time.Second)
 	if err != nil {
 		return err
 	}
-	return c.PrintPlaying(current)
+	fmt.Println(song)
+	return nil
+}
+
+func FormatSong(current *spotify.CurrentlyPlaying) string {
+	icon := "▶"
+	if !current.Playing {
+		icon = "⏸"
+	}
+	return fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name)
 }
 
 func (c *Commands) Shuffle(ctx *gctx.Context) error {
@@ -975,7 +999,7 @@ func (c *Commands) PrintPlaying(current *spotify.CurrentlyPlaying) error {
 	return nil
 }
 
-func (c *Commands) PrintDevices(devices []spotify.PlayerDevice) error {
+func PrintDevices(devices []spotify.PlayerDevice) error {
 	out, err := json.MarshalIndent(devices, "", " ")
 	if err != nil {
 		return err
@@ -1264,7 +1288,7 @@ func (c *Commands) GetRadioPlaylist(ctx *gctx.Context, name string) (*spotify.Fu
 func (c *Commands) CreateRadioPlaylist(ctx *gctx.Context, name string) (*spotify.FullPlaylist, *sql.DB, error) {
 	// private flag doesnt work
 	configDir, _ := os.UserConfigDir()
-	playlist, err := c.Client().CreatePlaylistForUser(ctx, ctx.UserId, name+" - autoradio", "Automanaged radio playlist", false, false)
+	playlist, err := c.Client().CreatePlaylistForUser(ctx, c.User(), name+" - autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -2,23 +2,22 @@ package gctx
 
 import (
 	"context"
-	"log"
 	"os"
+
+	"tuxpa.in/a/zlog"
 )
 
 type Context struct {
 	context.Context
-	*log.Logger
-	Debug  *log.Logger
-	UserId string
+	zlog.Logger
+	Debug zlog.Logger
 }
 
 func NewContext(ctx context.Context) *Context {
 	out := &Context{
-		ctx,
-		log.New(os.Stdout, "LOG:", 0),
-		log.New(os.Stdout, "DEBUG:", 1),
-		"",
+		Context: ctx,
+		Logger:  zlog.New(os.Stderr),
+		Debug:   zlog.New(os.Stderr),
 	}
 	return out
 }
