@@ -595,7 +595,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 
 	playlistItems, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("orig playlist items: %w", err)
 	}
 
 	found := false
@@ -603,7 +603,11 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	for !found {
 		tracks, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset(page*50))
 		if err != nil {
-			return err
+			return fmt.Errorf("tracks: %w", err)
+		}
+		if len(tracks.Items) == 0 {
+			found = true
+			break
 		}
 		for _, track := range tracks.Items {
 			if track.Track.Track.ID == status.Item.ID {
@@ -623,7 +627,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 			}
 			trackGroups = append(trackGroups, item)
 			if err != nil {
-				return err
+				return fmt.Errorf("error clearing playlist: %w", err)
 			}
 		}
 		_, err = c.Client().RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
@@ -632,7 +636,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	to_add := 500 - (playlistItems.Total - len(to_remove))
 	playlistItems, err = c.Client().GetPlaylistItems(ctx, radioPlaylist.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("playlist items: %w", err)
 	}
 	total := playlistItems.Total
 	pages := int(math.Ceil(float64(total) / 50))
@@ -642,7 +646,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	}
 	playlistPage, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
-		return err
+		return fmt.Errorf("playlist page: %w", err)
 	}
 	pageSongs := playlistPage.Items
 	frand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
@@ -668,7 +672,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	for _, song := range recomendations.Tracks {
 		exists, err := c.SongExists(db, song.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("err check song existnce: %w", err)
 		}
 		if !exists {
 			recomendationIds = append(recomendationIds, song.ID)
@@ -685,11 +689,11 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	to_add -= len(queue)
 	_, err = c.Client().AddTracksToPlaylist(ctx, radioPlaylist.ID, queue...)
 	if err != nil {
-		return err
+		return fmt.Errorf("add tracks: %w", err)
 	}
 	err = c.Client().Repeat(ctx, "context")
 	if err != nil {
-		return err
+		return fmt.Errorf("repeat: %w", err)
 	}
 	for to_add > 0 {
 		id := frand.Intn(len(recomendationIds)-2) + 1
@@ -698,13 +702,13 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 		}
 		additional_recs, err := c.Client().GetRecommendations(ctx, seed, &spotify.TrackAttributes{}, spotify.Limit(100))
 		if err != nil {
-			return err
+			return fmt.Errorf("get recs: %w", err)
 		}
 		additionalRecsIds := []spotify.ID{}
 		for idx, song := range additional_recs.Tracks {
 			exists, err := c.SongExists(db, song.ID)
 			if err != nil {
-				return err
+				return fmt.Errorf("check song existence: %w", err)
 			}
 			if !exists {
 				if idx > to_add {
@@ -717,7 +721,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 		to_add -= len(queue)
 		_, err = c.Client().AddTracksToPlaylist(ctx, radioPlaylist.ID, additionalRecsIds...)
 		if err != nil {
-			return err
+			return fmt.Errorf("add tracks to playlist: %w", err)
 		}
 	}
 	return nil
