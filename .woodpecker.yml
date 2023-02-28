@@ -11,6 +11,6 @@ pipeline:
     image: goreleaser/goreleaser
     commands:
       - goreleaser release
-    secrets: [ GITEA_KEY ]
+    secrets: [ gitea_token ]
     when:
       event: tag
