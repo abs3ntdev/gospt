@@ -8,17 +8,9 @@ pipeline:
       - ./gospt completion fish > gospt_fish
 
   publish:
-    image: woodpeckerci/plugin-gitea-release
-    settings:
-      skip_verify: true
-      base_url: https://gitea.asdf.cafe
-      files:
-        - gospt
-        - gospt_zsh
-        - gospt_bash
-        - gospt_fish
-      api_key:
-        from_secret: GITEA_KEY
-      checksum: sha256
+    image: goreleaser/goreleaser
+    commands:
+      - goreleaser release
+    secrets: [ GITEA_KEY ]
     when:
       event: tag
