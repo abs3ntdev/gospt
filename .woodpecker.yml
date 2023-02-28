@@ -3,9 +3,9 @@ pipeline:
     image: golang:1.19
     commands:
       - go build -o gospt
-      - ./gospt completion zsh > gospt_zsh
-      - ./gospt completion bash > gospt_bash
-      - ./gospt completion fish > gospt_fish
+      - ./gospt completion zsh > completions/gospt_zsh
+      - ./gospt completion bash > completions/gospt_bash
+      - ./gospt completion fish > completions/gospt_fish
 
   publish:
     image: goreleaser/goreleaser

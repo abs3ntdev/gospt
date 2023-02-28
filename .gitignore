@@ -4,6 +4,7 @@ bin/*
 gospt_zsh
 gospt_bash
 gospt_fish
+completions
 
 .idea/*
 .idea
