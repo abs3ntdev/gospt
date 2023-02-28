@@ -3,6 +3,7 @@ pipeline:
     image: golang:1.19
     commands:
       - go build -o gospt
+      - mkdir completions
       - ./gospt completion zsh > completions/gospt_zsh
       - ./gospt completion bash > completions/gospt_bash
       - ./gospt completion fish > completions/gospt_fish
