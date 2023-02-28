@@ -889,11 +889,25 @@ func (c *Commands) Previous(ctx *gctx.Context) error {
 }
 
 func (c *Commands) Status(ctx *gctx.Context) error {
-	state, err := c.Client().PlayerState(ctx)
+	state, err := cache.DefaultCache().GetOrDo("state", func() (string, error) {
+		state, err := c.Client().PlayerState(ctx)
+		if err != nil {
+			return "", err
+		}
+		str, err := c.FormatState(state)
+		if err != nil {
+			return "", nil
+		}
+		return str, nil
+	}, 5*time.Second)
 	if err != nil {
 		return err
 	}
-	return c.PrintState(state)
+	if err != nil {
+		return err
+	}
+	fmt.Println(state)
+	return nil
 }
 
 func (c *Commands) Link(ctx *gctx.Context) (string, error) {
@@ -983,15 +997,14 @@ func (c *Commands) PlaylistTracks(ctx *gctx.Context, playlist spotify.ID, page i
 	return c.Client().GetPlaylistTracks(ctx, playlist, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
 
-func (c *Commands) PrintState(state *spotify.PlayerState) error {
+func (c *Commands) FormatState(state *spotify.PlayerState) (string, error) {
 	state.Item.AvailableMarkets = []string{}
 	state.Item.Album.AvailableMarkets = []string{}
 	out, err := json.MarshalIndent(state, "", " ")
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Println(string(out))
-	return nil
+	return (string(out)), nil
 }
 
 func (c *Commands) PrintPlaying(current *spotify.CurrentlyPlaying) error {
