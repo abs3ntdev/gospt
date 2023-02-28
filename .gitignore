@@ -1,6 +1,9 @@
 bin/
 bin/*
 /gospt
+gospt_zsh
+gospt_bash
+gospt_fish
 
 .idea/*
 .idea
@@ -9,3 +12,5 @@ bin/*
 *.out
 
 *.tmp
+
+dist/
