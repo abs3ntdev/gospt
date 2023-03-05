@@ -22,7 +22,7 @@ aurs:
     # The contributors of the package.
     # Defaults to empty.
     contributors:
-      - 'abs3nt <abs3nt@asdf.cafe>'f
+      - 'abs3nt <abs3nt@asdf.cafe>'
 
     # SPDX identifier of your app's license.
     # Default is empty.
