@@ -115,3 +115,58 @@ aurs:
     # Defaults to `ssh -i {{ .KeyPath }} -o StrictHostKeyChecking=accept-new -F /dev/null`.
     git_ssh_command: 'ssh -i {{ .Env.KEY }} -o SomeOption=yes'
 
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    ignore:
+      - goos: windows
+        goarch: "386"
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+    - goos: windows
+      format: zip
+    files:
+      - completions/*
+    rlcp: true
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  groups:
+  - title: Added
+    regexp: '^.*?ADD(\([[:word:]]+\))??!?:.+$'
+    order: 0
+  - title: 'Bug fixes'
+    regexp: '^.*?BUG(\([[:word:]]+\))??!?:.+$'
+    order: 1
+  - title: 'Enhancements'
+    regexp: '^.*?IMPROVED(\([[:word:]]+\))??!?:.+$'
+    order: 1
+  - title: 'Docs'
+    regexp: '^.*?DOC(\([[:word:]]+\))??!?:.+$'
+    order: 1
+  - title: 'CI'
+    regexp: '^.*?CI(\([[:word:]]+\))??!?:.+$'
+    order: 1
+  - title: Others
+    order: 999
+
