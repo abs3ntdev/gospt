@@ -10,7 +10,7 @@ pipeline:
       - ./gospt completion fish > completions/gospt_fish
 
   publish:
-    image: goreleaser/goreleaser --clean
+    image: goreleaser/goreleaser
     commands:
       - goreleaser release --clean
     secrets: [ gitea_token ]
