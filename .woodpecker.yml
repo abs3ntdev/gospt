@@ -16,3 +16,10 @@ pipeline:
     secrets: [ gitea_token ]
     when:
       event: tag
+  publish_aur:
+    image: goreleaser/goreleaser
+    commands:
+      - goreleaser release --config .goreleaseraur.yaml
+    secrets: [ gitea_token ]
+    when:
+      event: tag

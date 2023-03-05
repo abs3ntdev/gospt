@@ -1,0 +1,27 @@
+settings:
+  files:
+    errors:
+      status: false
+      path: ""
+      name: .r.logs.log
+  legacy:
+    force: false
+    interval: 100ms
+server:
+  status: true
+  open: false
+  port: 5002
+  host: ""
+schema:
+- name: /home/abs3nt/Dev/gospt
+  path: /home/abs3nt/Dev/gospt
+  commands:
+    tidy:
+      status: true
+    run:
+      status: true
+  watcher:
+    extensions:
+    - go
+    paths:
+    - /
