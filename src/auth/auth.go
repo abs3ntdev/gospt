@@ -1,13 +1,15 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"tuxpa.in/a/zlog/log"
 
 	"gitea.asdf.cafe/abs3nt/gospt/src/config"
 	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
@@ -23,6 +25,12 @@ var (
 	state        = "abc123"
 	configDir, _ = os.UserConfigDir()
 )
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
 
 func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 	if config.Values.ClientId == "" || config.Values.ClientSecret == "" || config.Values.Port == "" {
@@ -67,6 +75,12 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		ctx.Context = context.WithValue(ctx.Context, oauth2.HTTPClient, &http.Client{
+			Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+				log.Trace().Interface("path", r.URL.Path).Msg("request")
+				return http.DefaultTransport.RoundTrip(r)
+			}),
+		})
 		authClient := auth.Client(ctx, tok)
 		client := spotify.New(authClient)
 		new_token, err := client.Token()
@@ -91,7 +105,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 	go func() {
 		err := http.ListenAndServe(fmt.Sprintf(":%s", config.Values.Port), nil)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}()
 	url := auth.AuthURL(state)
@@ -114,7 +128,6 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	tok, err := auth.Token(r.Context(), state, r)
 	if err != nil {
 		http.Error(w, "Couldn't get token", http.StatusForbidden)
-		log.Fatal(err)
 	}
 	if st := r.FormValue("state"); st != state {
 		http.NotFound(w, r)
