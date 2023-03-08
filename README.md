@@ -12,7 +12,11 @@ This project is still under heavy development and some things might not work or 
 # To install (with a package manager):
 
 ## Archlinux ([AUR])
-```yay -S gospt```
+```yay -S gospt```  
+
+or
+
+```yay -S gospt-git```
 
 ## NetBSD ([Official repositories])
 ```pkgin install gospt```
@@ -22,6 +26,7 @@ This project is still under heavy development and some things might not work or 
 ```git clone https://gitea.asdf.cafe/abs3nt/gospt```
 
 ```cd gospt```
+
 
 ```make build && sudo make install```
 
