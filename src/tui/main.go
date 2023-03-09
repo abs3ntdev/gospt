@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/commands"
-	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
+	"git.asdf.cafe/abs3nt/gospt/src/commands"
+	"git.asdf.cafe/abs3nt/gospt/src/gctx"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
