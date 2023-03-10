@@ -1,7 +1,7 @@
-IF YOU ARE ON GITHUB.COM GO HERE INSTEAD: https://gitea.asdf.cafe/abs3nt/gospt :)
+IF YOU ARE ON GITHUB.COM GO HERE INSTEAD: https://git.asdf.cafe/abs3nt/gospt :)
 
 
-If you open an issue or PR on github I won't see it please use gitea. Register on asdf and open your PRs there
+If you open an issue or PR on github I won't see it please use git. Register on asdf and open your PRs there
 
 This project is still under heavy development and some things might not work or not work as intended. Don't hesitate to open an issue to let me know.
 
@@ -23,7 +23,7 @@ or
 
 # To build from source by pulling and building the binary
 
-```git clone https://gitea.asdf.cafe/abs3nt/gospt```
+```git clone https://git.asdf.cafe/abs3nt/gospt```
 
 ```cd gospt```
 
@@ -77,6 +77,6 @@ To view help:
 
 Very open to contributations feel free to open a PR
 
-[tmux plugin](https://gitea.asdf.cafe/abs3nt/tmux-gospt)
+[tmux plugin](https://git.asdf.cafe/abs3nt/tmux-gospt)
 
-[wiki](https://gitea.asdf.cafe/abs3nt/gospt/wiki)
+[wiki](https://git.asdf.cafe/abs3nt/gospt/wiki)

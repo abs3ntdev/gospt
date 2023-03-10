@@ -1,6 +1,6 @@
 gitea_urls:
-  api: https://gitea.asdf.cafe/api/v1
-  download: https://gitea.asdf.cafe
+  api: https://git.asdf.cafe/api/v1
+  download: https://git.asdf.cafe
   skip_tls_verify: false
 
 before:

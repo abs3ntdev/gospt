@@ -1,4 +1,4 @@
-module gitea.asdf.cafe/abs3nt/gospt
+module git.asdf.cafe/abs3nt/gospt
 
 go 1.19
 

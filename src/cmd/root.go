@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	cmds "gitea.asdf.cafe/abs3nt/gospt/src/commands"
+	cmds "git.asdf.cafe/abs3nt/gospt/src/commands"
 
-	"gitea.asdf.cafe/abs3nt/gospt/src/config"
-	"gitea.asdf.cafe/abs3nt/gospt/src/gctx"
+	"git.asdf.cafe/abs3nt/gospt/src/config"
+	"git.asdf.cafe/abs3nt/gospt/src/gctx"
 	"tuxpa.in/a/zlog"
 
 	"github.com/cristalhq/aconfig"
