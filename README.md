@@ -23,6 +23,7 @@ or
 
 # To build from source by pulling and building the binary
 
+
 ```git clone https://git.asdf.cafe/abs3nt/gospt```
 
 ```cd gospt```
