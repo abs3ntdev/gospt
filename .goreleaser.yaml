@@ -17,6 +17,8 @@ builds:
     ignore:
       - goos: windows
         goarch: "386"
+    ldflags:
+      - -s -w -X git.asdf.cafe/abs3nt/gospt/src.cmd.Version={{.Version}}
 
 archives:
   - format: tar.gz
