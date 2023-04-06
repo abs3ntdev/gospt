@@ -136,7 +136,6 @@ func (m *mainModel) LoadMoreItems() {
 		if err != nil {
 			return
 		}
-		page++
 		items := []list.Item{}
 		for _, track := range tracks.Tracks {
 			items = append(items, mainItem{
