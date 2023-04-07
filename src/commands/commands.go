@@ -760,7 +760,7 @@ func (c *Commands) Pause(ctx *gctx.Context) error {
 func (c *Commands) TogglePlay(ctx *gctx.Context) error {
 	current, err := c.Client().PlayerCurrentlyPlaying(ctx)
 	if err != nil {
-		return err
+		return c.Play(ctx)
 	}
 	if !current.Playing {
 		return c.Play(ctx)
