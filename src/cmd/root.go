@@ -21,11 +21,10 @@ import (
 
 var (
 	// Used for flags.
-	ctx         *gctx.Context
-	commands    *cmds.Commands
-	cfgFile     string
-	userLicense string
-	verbose     bool
+	ctx      *gctx.Context
+	commands *cmds.Commands
+	cfgFile  string
+	verbose  bool
 
 	rootCmd = &cobra.Command{
 		Use:   "gospt",
@@ -90,7 +89,12 @@ func initConfig() {
 	}
 	if config.Values.ClientSecretCmd != "" {
 		args := strings.Fields(config.Values.ClientSecretCmd)
-		secret, err := exec.Command(args[0], args[1:]...).Output()
+		cmd := args[0]
+		secret_command := exec.Command(cmd)
+		if len(args) > 1 {
+			secret_command.Args = args
+		}
+		secret, err := secret_command.Output()
 		if err != nil {
 			panic(err)
 		}

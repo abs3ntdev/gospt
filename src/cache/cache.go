@@ -42,7 +42,7 @@ func (c *Cache) save(m map[string]CacheEntry) error {
 		return err
 	}
 	log.Trace().Str("tosave", string(payload)).Msg("saving cache")
-	err = os.WriteFile(c.Root, payload, 0640)
+	err = os.WriteFile(c.Root, payload, 0o600)
 	if err != nil {
 		return err
 	}

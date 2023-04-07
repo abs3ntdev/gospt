@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"tuxpa.in/a/zlog/log"
 
@@ -91,7 +92,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = os.WriteFile(authFilePath, out, 0o644)
+		err = os.WriteFile(authFilePath, out, 0o600)
 		if err != nil {
 			return nil, fmt.Errorf("failed to save auth")
 		}
@@ -102,8 +103,12 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Got request for:", r.URL.String())
 	})
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%s", config.Values.Port),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 	go func() {
-		err := http.ListenAndServe(fmt.Sprintf(":%s", config.Values.Port), nil)
+		err := server.ListenAndServe()
 		if err != nil {
 			panic(err)
 		}
@@ -115,6 +120,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 	// wait for auth to complete
 	client := <-ch
 
+	server.Shutdown(ctx)
 	// use the client to make calls that require authorization
 	user, err := client.CurrentUser(ctx)
 	if err != nil {
@@ -137,7 +143,7 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
-	err = os.WriteFile(filepath.Join(configDir, "gospt/auth.json"), out, 0o644)
+	err = os.WriteFile(filepath.Join(configDir, "gospt/auth.json"), out, 0o600)
 	if err != nil {
 		panic("FAILED TO SAVE AUTH")
 	}

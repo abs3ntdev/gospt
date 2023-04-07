@@ -84,27 +84,13 @@ func SearchView(ctx *gctx.Context, commands *commands.Commands, search string) (
 	if err != nil {
 		return nil, nil, err
 	}
-	items = append(items, mainItem{
-		Name:        "Tracks",
-		Desc:        "Search results",
-		SpotifyItem: result.Tracks,
-	})
-	items = append(items, mainItem{
-		Name:        "Albums",
-		Desc:        "Search results",
-		SpotifyItem: result.Albums,
-	})
-	items = append(items, mainItem{
-		Name:        "Artists",
-		Desc:        "Search results",
-		SpotifyItem: result.Artists,
-	})
-
-	items = append(items, mainItem{
-		Name:        "Playlists",
-		Desc:        "Search results",
-		SpotifyItem: result.Playlists,
-	})
+	items = append(
+		items,
+		mainItem{Name: "Tracks", Desc: "Search results", SpotifyItem: result.Tracks},
+		mainItem{Name: "Albums", Desc: "Search results", SpotifyItem: result.Albums},
+		mainItem{Name: "Artists", Desc: "Search results", SpotifyItem: result.Artists},
+		mainItem{Name: "Playlists", Desc: "Search results", SpotifyItem: result.Playlists},
+	)
 	results := &SearchResults{
 		Tracks:    result.Tracks,
 		Playlists: result.Playlists,
@@ -149,7 +135,7 @@ func SearchAlbumsView(ctx *gctx.Context, commands *commands.Commands, albums *sp
 		items = append(items, mainItem{
 			Name:        album.Name,
 			ID:          album.ID,
-			Desc:        fmt.Sprintf("%s, %d", album.Artists[0].Name, album.ReleaseDateTime()),
+			Desc:        fmt.Sprintf("%s, %s", album.Artists[0].Name, album.ReleaseDateTime().String()),
 			SpotifyItem: album,
 		})
 	}

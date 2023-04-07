@@ -531,7 +531,7 @@ func (c *Commands) RadioGivenSong(ctx *gctx.Context, song spotify.SimpleTrack, p
 func (c *Commands) SongExists(db *sql.DB, song spotify.ID) (bool, error) {
 	song_id := string(song)
 	sqlStmt := `SELECT id FROM radio WHERE id = ?`
-	err := db.QueryRow(sqlStmt, string(song_id)).Scan(&song_id)
+	err := db.QueryRow(sqlStmt, song_id).Scan(&song_id)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return false, err
@@ -563,15 +563,12 @@ func (c *Commands) Radio(ctx *gctx.Context) error {
 			return err
 		}
 		seed_song = tracks.Tracks[frand.Intn(len(tracks.Tracks))].SimpleTrack
-	} else {
-		if !current_song.Playing {
-
-			tracks, err := c.Client().CurrentUsersTracks(ctx, spotify.Limit(10))
-			if err != nil {
-				return err
-			}
-			seed_song = tracks.Tracks[frand.Intn(len(tracks.Tracks))].SimpleTrack
+	} else if !current_song.Playing {
+		tracks, err := c.Client().CurrentUsersTracks(ctx, spotify.Limit(10))
+		if err != nil {
+			return err
 		}
+		seed_song = tracks.Tracks[frand.Intn(len(tracks.Tracks))].SimpleTrack
 	}
 	return c.RadioGivenSong(ctx, seed_song, current_song.Progress)
 }
@@ -587,6 +584,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	to_remove := []spotify.ID{}
 	radioPlaylist, db, err := c.GetRadioPlaylist(ctx, "")
 	if err != nil {
+		return err
 	}
 
 	if status.PlaybackContext.URI != radioPlaylist.URI {
@@ -598,20 +596,17 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 		return fmt.Errorf("orig playlist items: %w", err)
 	}
 
-	found := false
 	page := 0
-	for !found {
+	for {
 		tracks, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset(page*50))
 		if err != nil {
 			return fmt.Errorf("tracks: %w", err)
 		}
 		if len(tracks.Items) == 0 {
-			found = true
 			break
 		}
 		for _, track := range tracks.Items {
 			if track.Track.Track.ID == status.Item.ID {
-				found = true
 				break
 			}
 			to_remove = append(to_remove, track.Track.Track.ID)
@@ -630,7 +625,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 				return fmt.Errorf("error clearing playlist: %w", err)
 			}
 		}
-		_, err = c.Client().RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
+		c.Client().RemoveTracksFromPlaylist(ctx, radioPlaylist.ID, trackGroups...)
 	}
 
 	to_add := 500 - (playlistItems.Total - len(to_remove))
@@ -642,7 +637,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(int(pages-1)) + 1
+		randomPage = frand.Intn(pages-1) + 1
 	}
 	playlistPage, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
@@ -684,6 +679,9 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 			break
 		}
 		_, err = db.QueryContext(ctx, fmt.Sprintf("INSERT INTO radio (id) VALUES('%s')", rec.String()))
+		if err != nil {
+			return err
+		}
 		queue = append(queue, rec)
 	}
 	to_add -= len(queue)
@@ -825,8 +823,8 @@ func (c *Commands) Next(ctx *gctx.Context, amt int) error {
 	case "playlist":
 		found := false
 		currentTrackIndex := 0
+		page := 1
 		for !found {
-			page := 1
 			playlist, err := c.Client().GetPlaylistItems(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
 			if err != nil {
 				return err
@@ -850,8 +848,8 @@ func (c *Commands) Next(ctx *gctx.Context, amt int) error {
 	case "album":
 		found := false
 		currentTrackIndex := 0
+		page := 1
 		for !found {
-			page := 1
 			playlist, err := c.Client().GetAlbumTracks(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
 			if err != nil {
 				return err
@@ -903,9 +901,6 @@ func (c *Commands) Status(ctx *gctx.Context) error {
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return err
-	}
 	fmt.Println(state)
 	return nil
 }
@@ -923,7 +918,7 @@ func (c *Commands) LinkContext(ctx *gctx.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(state.PlaybackContext.ExternalURLs["spotify"]), nil
+	return state.PlaybackContext.ExternalURLs["spotify"], nil
 }
 
 func (c *Commands) NowPlaying(ctx *gctx.Context) error {
@@ -953,7 +948,7 @@ func FormatSong(current *spotify.CurrentlyPlaying) string {
 func (c *Commands) Shuffle(ctx *gctx.Context) error {
 	state, err := c.Client().PlayerState(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get current playstate")
+		return fmt.Errorf("failed to get current playstate")
 	}
 	err = c.Client().Shuffle(ctx, !state.ShuffleState)
 	if err != nil {
@@ -966,7 +961,7 @@ func (c *Commands) Shuffle(ctx *gctx.Context) error {
 func (c *Commands) Repeat(ctx *gctx.Context) error {
 	state, err := c.Client().PlayerState(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get current playstate")
+		return fmt.Errorf("failed to get current playstate")
 	}
 	newState := "off"
 	if state.RepeatState == "off" {
@@ -1012,7 +1007,7 @@ func (c *Commands) PrintPlaying(current *spotify.CurrentlyPlaying) error {
 	if !current.Playing {
 		icon = "⏸"
 	}
-	fmt.Println(fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name))
+	fmt.Printf("%s %s - %s\n", icon, current.Item.Name, current.Item.Artists[0].Name)
 	return nil
 }
 
@@ -1031,7 +1026,7 @@ func (c *Commands) SetDevice(ctx *gctx.Context, device spotify.PlayerDevice) err
 		return err
 	}
 	configDir, _ := os.UserConfigDir()
-	err = os.WriteFile(filepath.Join(configDir, "gospt/device.json"), out, 0o644)
+	err = os.WriteFile(filepath.Join(configDir, "gospt/device.json"), out, 0o600)
 	if err != nil {
 		return err
 	}
@@ -1049,12 +1044,12 @@ func isNoActiveError(err error) bool {
 func (c *Commands) RadioFromPlaylist(ctx *gctx.Context, playlist spotify.SimplePlaylist) error {
 	total := playlist.Tracks.Total
 	if total == 0 {
-		return fmt.Errorf("This playlist is empty")
+		return fmt.Errorf("this playlist is empty")
 	}
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(int(pages-1)) + 1
+		randomPage = frand.Intn(pages-1) + 1
 	}
 	playlistPage, err := c.Client().GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
@@ -1083,12 +1078,12 @@ func (c *Commands) RadioFromAlbum(ctx *gctx.Context, album spotify.SimpleAlbum) 
 	}
 	total := tracks.Total
 	if total == 0 {
-		return fmt.Errorf("This playlist is empty")
+		return fmt.Errorf("this playlist is empty")
 	}
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(int(pages-1)) + 1
+		randomPage = frand.Intn(pages-1) + 1
 	}
 	albumTrackPage, err := c.AlbumTracks(ctx, album.ID, randomPage)
 	if err != nil {
@@ -1116,12 +1111,12 @@ func (c *Commands) RadioFromSavedTracks(ctx *gctx.Context) error {
 		return err
 	}
 	if savedSongs.Total == 0 {
-		return fmt.Errorf("You have no saved songs")
+		return fmt.Errorf("you have no saved songs")
 	}
 	pages := int(math.Ceil(float64(savedSongs.Total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(int(pages-1)) + 1
+		randomPage = frand.Intn(pages-1) + 1
 	}
 	trackPage, err := c.Client().CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(randomPage*50))
 	if err != nil {
@@ -1261,29 +1256,6 @@ func (c *Commands) activateDevice(ctx *gctx.Context) (spotify.ID, error) {
 	return device.ID, nil
 }
 
-func (c *Commands) getDefaultDevice(ctx *gctx.Context) (spotify.ID, error) {
-	configDir, _ := os.UserConfigDir()
-	if _, err := os.Stat(filepath.Join(configDir, "gospt/device.json")); err == nil {
-		deviceFile, err := os.Open(filepath.Join(configDir, "gospt/device.json"))
-		if err != nil {
-			return "", err
-		}
-		defer deviceFile.Close()
-		deviceValue, err := io.ReadAll(deviceFile)
-		if err != nil {
-			return "", err
-		}
-		var device *spotify.PlayerDevice
-		err = json.Unmarshal(deviceValue, &device)
-		if err != nil {
-			return "", err
-		}
-		return device.ID, nil
-	} else {
-		return "", err
-	}
-}
-
 func (c *Commands) GetRadioPlaylist(ctx *gctx.Context, name string) (*spotify.FullPlaylist, *sql.DB, error) {
 	configDir, _ := os.UserConfigDir()
 	playlistFile, err := os.ReadFile(filepath.Join(configDir, "gospt/radio.json"))
@@ -1299,6 +1271,9 @@ func (c *Commands) GetRadioPlaylist(ctx *gctx.Context, name string) (*spotify.Fu
 		return nil, nil, err
 	}
 	db, err := sql.Open("sqlite", filepath.Join(configDir, "gospt/radio.db"))
+	if err != nil {
+		return nil, nil, err
+	}
 	return playlist, db, nil
 }
 
@@ -1313,11 +1288,14 @@ func (c *Commands) CreateRadioPlaylist(ctx *gctx.Context, name string) (*spotify
 	if err != nil {
 		return nil, nil, err
 	}
-	err = os.WriteFile(filepath.Join(configDir, "gospt/radio.json"), raw, 0o644)
+	err = os.WriteFile(filepath.Join(configDir, "gospt/radio.json"), raw, 0o600)
 	if err != nil {
 		return nil, nil, err
 	}
 	db, err := sql.Open("sqlite", filepath.Join(configDir, "gospt/radio.db"))
+	if err != nil {
+		return nil, nil, err
+	}
 	db.QueryContext(ctx, "DROP TABLE IF EXISTS radio")
 	db.QueryContext(ctx, "CREATE TABLE IF NOT EXISTS radio (id string PRIMARY KEY)")
 	return playlist, db, nil

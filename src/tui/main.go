@@ -31,24 +31,24 @@ type Mode string
 
 const (
 	Album             Mode = "album"
-	ArtistAlbum            = "artistalbum"
-	Artist                 = "artist"
-	Artists                = "artists"
-	Tracks                 = "tracks"
-	Albums                 = "albums"
-	Main                   = "main"
-	Playlists              = "playlists"
-	Playlist               = "playlist"
-	Devices                = "devices"
-	Search                 = "search"
-	SearchAlbums           = "searchalbums"
-	SearchAlbum            = "searchalbum"
-	SearchArtists          = "searchartists"
-	SearchArtist           = "searchartist"
-	SearchArtistAlbum      = "searchartistalbum"
-	SearchTracks           = "searchtracks"
-	SearchPlaylists        = "searchplaylsits"
-	SearchPlaylist         = "searchplaylist"
+	ArtistAlbum       Mode = "artistalbum"
+	Artist            Mode = "artist"
+	Artists           Mode = "artists"
+	Tracks            Mode = "tracks"
+	Albums            Mode = "albums"
+	Main              Mode = "main"
+	Playlists         Mode = "playlists"
+	Playlist          Mode = "playlist"
+	Devices           Mode = "devices"
+	Search            Mode = "search"
+	SearchAlbums      Mode = "searchalbums"
+	SearchAlbum       Mode = "searchalbum"
+	SearchArtists     Mode = "searchartists"
+	SearchArtist      Mode = "searchartist"
+	SearchArtistAlbum Mode = "searchartistalbum"
+	SearchTracks      Mode = "searchtracks"
+	SearchPlaylists   Mode = "searchplaylsits"
+	SearchPlaylist    Mode = "searchplaylist"
 )
 
 type mainItem struct {
@@ -90,36 +90,36 @@ type mainModel struct {
 func (m *mainModel) PlayRadio() {
 	m.list.NewStatusMessage("Starting radio for " + m.list.SelectedItem().(mainItem).Title())
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
-	switch selectedItem.(type) {
+	switch item := selectedItem.(type) {
 	case spotify.SimplePlaylist:
-		go HandlePlaylistRadio(m.ctx, m.commands, selectedItem.(spotify.SimplePlaylist))
+		go HandlePlaylistRadio(m.ctx, m.commands, item)
 		return
 	case *spotify.SavedTrackPage:
 		go HandleLibraryRadio(m.ctx, m.commands)
 		return
 	case spotify.SimpleAlbum:
-		go HandleAlbumRadio(m.ctx, m.commands, selectedItem.(spotify.SimpleAlbum))
+		go HandleAlbumRadio(m.ctx, m.commands, item)
 		return
 	case spotify.FullAlbum:
-		go HandleAlbumRadio(m.ctx, m.commands, selectedItem.(spotify.FullAlbum).SimpleAlbum)
+		go HandleAlbumRadio(m.ctx, m.commands, item.SimpleAlbum)
 		return
 	case spotify.SimpleArtist:
-		go HandleArtistRadio(m.ctx, m.commands, selectedItem.(spotify.SimpleArtist))
+		go HandleArtistRadio(m.ctx, m.commands, item)
 		return
 	case spotify.FullArtist:
-		go HandleArtistRadio(m.ctx, m.commands, selectedItem.(spotify.FullArtist).SimpleArtist)
+		go HandleArtistRadio(m.ctx, m.commands, item.SimpleArtist)
 		return
 	case spotify.SimpleTrack:
-		go HandleRadio(m.ctx, m.commands, selectedItem.(spotify.SimpleTrack))
+		go HandleRadio(m.ctx, m.commands, item)
 		return
 	case spotify.FullTrack:
-		go HandleRadio(m.ctx, m.commands, selectedItem.(spotify.FullTrack).SimpleTrack)
+		go HandleRadio(m.ctx, m.commands, item.SimpleTrack)
 		return
 	case spotify.PlaylistTrack:
-		go HandleRadio(m.ctx, m.commands, selectedItem.(spotify.PlaylistTrack).Track.SimpleTrack)
+		go HandleRadio(m.ctx, m.commands, item.Track.SimpleTrack)
 		return
 	case spotify.SavedTrack:
-		go HandleRadio(m.ctx, m.commands, selectedItem.(spotify.SavedTrack).SimpleTrack)
+		go HandleRadio(m.ctx, m.commands, item.SimpleTrack)
 		return
 	}
 }
@@ -132,6 +132,7 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 		m.mode = Main
 		new_items, err := MainView(m.ctx, m.commands)
 		if err != nil {
+			return nil, err
 		}
 		m.list.SetItems(new_items)
 	case Album:
@@ -203,36 +204,36 @@ type SpotifyUrl struct {
 
 func (m *mainModel) CopyToClipboard() error {
 	item := m.list.SelectedItem().(mainItem).SpotifyItem
-	switch item.(type) {
+	switch converted := item.(type) {
 	case spotify.SimplePlaylist:
-		clipboard.WriteAll(item.(spotify.SimplePlaylist).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullPlaylist:
-		clipboard.WriteAll(item.(*spotify.FullPlaylist).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleAlbum:
-		clipboard.WriteAll(item.(spotify.SimpleAlbum).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullAlbum:
-		clipboard.WriteAll(item.(*spotify.FullAlbum).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleArtist:
-		clipboard.WriteAll(item.(spotify.SimpleArtist).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullArtist:
-		clipboard.WriteAll(item.(*spotify.FullArtist).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleTrack:
-		clipboard.WriteAll(item.(spotify.SimpleTrack).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.PlaylistTrack:
-		clipboard.WriteAll(item.(spotify.PlaylistTrack).Track.ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.Track.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SavedTrack:
-		clipboard.WriteAll(item.(spotify.SavedTrack).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.FullTrack:
-		clipboard.WriteAll(item.(spotify.FullTrack).ExternalURLs["spotify"])
+		clipboard.WriteAll(converted.ExternalURLs["spotify"])
 		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	}
 	return nil
@@ -241,10 +242,10 @@ func (m *mainModel) CopyToClipboard() error {
 func (m *mainModel) SelectItem() error {
 	switch m.mode {
 	case Search:
-		switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistPage:
 			m.mode = SearchArtists
-			new_items, err := SearchArtistsView(m.ctx, m.commands, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullArtistPage))
+			new_items, err := SearchArtistsView(m.ctx, m.commands, item)
 			if err != nil {
 				return err
 			}
@@ -252,7 +253,7 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.SimpleAlbumPage:
 			m.mode = SearchAlbums
-			new_items, err := SearchAlbumsView(m.ctx, m.commands, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimpleAlbumPage))
+			new_items, err := SearchAlbumsView(m.ctx, m.commands, item)
 			if err != nil {
 				return err
 			}
@@ -260,8 +261,7 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.SimplePlaylistPage:
 			m.mode = SearchPlaylists
-			playlists := m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.SimplePlaylistPage)
-			new_items, err := SearchPlaylistsView(m.ctx, m.commands, playlists)
+			new_items, err := SearchPlaylistsView(m.ctx, m.commands, item)
 			if err != nil {
 				return err
 			}
@@ -269,7 +269,7 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case *spotify.FullTrackPage:
 			m.mode = SearchTracks
-			new_items, err := SearchTracksView(m.ctx, m.commands, m.list.SelectedItem().(mainItem).SpotifyItem.(*spotify.FullTrackPage))
+			new_items, err := SearchTracksView(m.ctx, m.commands, item)
 			if err != nil {
 				return err
 			}
@@ -314,7 +314,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case Main:
-		switch m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistCursorPage:
 			m.mode = Artists
 			new_items, err := ArtistsView(m.ctx, m.commands)
@@ -333,9 +333,8 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		case spotify.SimplePlaylist:
 			m.mode = Playlist
-			playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
-			m.playlist = playlist
-			new_items, err := PlaylistView(m.ctx, m.commands, playlist)
+			m.playlist = item
+			new_items, err := PlaylistView(m.ctx, m.commands, item)
 			if err != nil {
 				return err
 			}
@@ -399,7 +398,7 @@ func (m *mainModel) SelectItem() error {
 	return nil
 }
 
-func (m mainModel) Init() tea.Cmd {
+func (m *mainModel) Init() tea.Cmd {
 	main_updates = make(chan *mainModel)
 	return Tick()
 }
@@ -437,7 +436,7 @@ func (m *mainModel) TickPlayback() {
 	}()
 }
 
-func (m mainModel) View() string {
+func (m *mainModel) View() string {
 	if m.input.Focused() {
 		return DocStyle.Render(m.list.View() + "\n" + m.input.View())
 	}
@@ -497,7 +496,7 @@ func (m *mainModel) getContext(playing *spotify.CurrentlyPlaying) (string, error
 	return "", nil
 }
 
-func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Update list items from LoadMore
 	select {
 	case update := <-main_updates:
@@ -647,7 +646,7 @@ func InitMain(ctx *gctx.Context, c *commands.Commands, mode Mode) (tea.Model, er
 			return nil, err
 		}
 	}
-	m := mainModel{
+	m := &mainModel{
 		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
 		ctx:      ctx,
 		commands: c,

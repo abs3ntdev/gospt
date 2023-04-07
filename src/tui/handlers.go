@@ -8,8 +8,7 @@ import (
 )
 
 func HandlePlayWithContext(ctx *gctx.Context, commands *commands.Commands, uri *spotify.URI, pos int) {
-	var err error
-	err = commands.PlaySongInPlaylist(ctx, uri, pos)
+	err := commands.PlaySongInPlaylist(ctx, uri, pos)
 	if err != nil {
 		return
 	}
@@ -94,8 +93,7 @@ func HandlePlayTrack(ctx *gctx.Context, commands *commands.Commands, track spoti
 }
 
 func HandleSetDevice(ctx *gctx.Context, commands *commands.Commands, player spotify.PlayerDevice) {
-	var err error
-	err = commands.SetDevice(ctx, player)
+	err := commands.SetDevice(ctx, player)
 	if err != nil {
 		return
 	}
