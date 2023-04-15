@@ -18,6 +18,7 @@ import (
 	"git.asdf.cafe/abs3nt/gospt/src/auth"
 	"git.asdf.cafe/abs3nt/gospt/src/cache"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
+	"git.asdf.cafe/abs3nt/gospt/src/youtube"
 
 	"github.com/zmb3/spotify/v2"
 	_ "modernc.org/sqlite"
@@ -911,6 +912,15 @@ func (c *Commands) Link(ctx *gctx.Context) (string, error) {
 		return "", err
 	}
 	return state.Item.ExternalURLs["spotify"], nil
+}
+
+func (c *Commands) YoutubeLink(ctx *gctx.Context) (string, error) {
+	state, err := c.Client().PlayerState(ctx)
+	if err != nil {
+		return "", err
+	}
+	link := youtube.Search(state.Item.Artists[0].Name + state.Item.Name)
+	return link, nil
 }
 
 func (c *Commands) LinkContext(ctx *gctx.Context) (string, error) {

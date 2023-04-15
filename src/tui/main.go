@@ -125,6 +125,7 @@ func (m *mainModel) PlayRadio() {
 }
 
 func (m *mainModel) GoBack() (tea.Cmd, error) {
+	page = 1
 	switch m.mode {
 	case Main:
 		return tea.Quit, nil
@@ -242,6 +243,7 @@ func (m *mainModel) CopyToClipboard() error {
 func (m *mainModel) SelectItem() error {
 	switch m.mode {
 	case Search:
+		page = 1
 		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistPage:
 			m.mode = SearchArtists
@@ -277,6 +279,7 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		}
 	case SearchArtists:
+		page = 1
 		m.mode = SearchArtist
 		m.artist = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleArtist)
 		new_items, err := ArtistAlbumsView(m.ctx, m.artist.ID, m.commands)
@@ -286,6 +289,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case SearchArtist:
+		page = 1
 		m.mode = SearchArtistAlbum
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.commands)
@@ -295,6 +299,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case SearchAlbums:
+		page = 1
 		m.mode = SearchAlbum
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.commands)
@@ -304,6 +309,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case SearchPlaylists:
+		page = 1
 		m.mode = SearchPlaylist
 		playlist := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimplePlaylist)
 		m.playlist = playlist
@@ -314,6 +320,7 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case Main:
+		page = 1
 		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 		case *spotify.FullArtistCursorPage:
 			m.mode = Artists
@@ -350,6 +357,7 @@ func (m *mainModel) SelectItem() error {
 			m.list.ResetSelected()
 		}
 	case Albums:
+		page = 1
 		m.mode = Album
 		m.album = m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.SimpleAlbum)
 		new_items, err := AlbumTracksView(m.ctx, m.album.ID, m.commands)
@@ -504,7 +512,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 	}
 	// Call for more items if needed
-	if m.list.Paginator.Page == m.list.Paginator.TotalPages-2 && m.list.Cursor() == 0 {
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-1 && m.list.Cursor() == 0 {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
 			go m.LoadMoreItems()
