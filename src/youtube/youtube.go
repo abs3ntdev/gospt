@@ -17,8 +17,6 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
-// getClient uses a Context and Config to retrieve a Token
-// then generate a Client. It returns the generated Client.
 func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 	cacheFile, err := tokenCacheFile()
 	if err != nil {
@@ -32,8 +30,6 @@ func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 	return config.Client(ctx, tok)
 }
 
-// getTokenFromWeb uses Config to request a Token.
-// It returns the retrieved Token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Go to the following link in your browser then type the "+
@@ -51,8 +47,6 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	return tok
 }
 
-// tokenCacheFile generates credential file path/filename.
-// It returns the generated credential path/filename.
 func tokenCacheFile() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
@@ -67,8 +61,6 @@ func tokenCacheFile() (string, error) {
 		url.QueryEscape("youtube-go-quickstart.json")), err
 }
 
-// tokenFromFile retrieves a Token from a given file path.
-// It returns the retrieved Token and any read error encountered.
 func tokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	handleError(err, "Error opening file")
@@ -78,8 +70,6 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	return t, err
 }
 
-// saveToken uses a file path to create a file and store the
-// token in it.
 func saveToken(file string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
