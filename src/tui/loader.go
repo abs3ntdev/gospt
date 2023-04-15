@@ -8,10 +8,13 @@ import (
 )
 
 func (m *mainModel) LoadMoreItems() {
+	loading = true
+	defer func() {
+		loading = false
+	}()
 	switch m.mode {
 	case "artist":
 		albums, err := m.commands.ArtistAlbums(m.ctx, m.artist.ID, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -31,7 +34,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "artists":
 		artists, err := m.commands.UserArtists(m.ctx, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -51,7 +53,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "album":
 		tracks, err := m.commands.AlbumTracks(m.ctx, m.album.ID, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -72,7 +73,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "albums":
 		albums, err := m.commands.UserAlbums(m.ctx, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -92,7 +92,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "main":
 		playlists, err := m.commands.Playlists(m.ctx, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -111,7 +110,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "playlist":
 		tracks, err := m.commands.PlaylistTracks(m.ctx, m.playlist.ID, (page + 1))
-		page++
 		if err != nil {
 			return
 		}
@@ -132,7 +130,6 @@ func (m *mainModel) LoadMoreItems() {
 		return
 	case "tracks":
 		tracks, err := m.commands.TrackList(m.ctx, (page + 1))
-		page++
 		if err != nil {
 			return
 		}

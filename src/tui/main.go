@@ -25,6 +25,7 @@ var (
 	playbackContext  string
 	main_updates     chan *mainModel
 	page             = 1
+	loading          = false
 )
 
 type Mode string
@@ -512,7 +513,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 	}
 	// Call for more items if needed
-	if m.list.Paginator.Page == m.list.Paginator.TotalPages-1 && m.list.Cursor() == 0 {
+	if m.list.Paginator.Page == m.list.Paginator.TotalPages-1 && m.list.Cursor() == 0 && !loading {
 		// if last request was still full request more
 		if len(m.list.Items())%50 == 0 {
 			go m.LoadMoreItems()
