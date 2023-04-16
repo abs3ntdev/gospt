@@ -172,11 +172,11 @@ func (c *Commands) AlbumTracks(ctx *gctx.Context, album spotify.ID, page int) (*
 }
 
 func (c *Commands) UserAlbums(ctx *gctx.Context, page int) (*spotify.SavedAlbumPage, error) {
-	albums, err := c.Client().CurrentUsersAlbums(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
-	if err != nil {
-		return nil, err
-	}
-	return albums, nil
+	return c.Client().CurrentUsersAlbums(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
+}
+
+func (c *Commands) UserQueue(ctx *gctx.Context) (*spotify.Queue, error) {
+	return c.Client().GetQueue(ctx)
 }
 
 func (c *Commands) PlayUrl(ctx *gctx.Context, args []string) error {
@@ -988,10 +988,6 @@ func (c *Commands) Repeat(ctx *gctx.Context) error {
 
 func (c *Commands) TrackList(ctx *gctx.Context, page int) (*spotify.SavedTrackPage, error) {
 	return c.Client().CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
-}
-
-func (c *Commands) GetQueue(ctx *gctx.Context) (*spotify.Queue, error) {
-	return c.Client().GetQueue(ctx)
 }
 
 func (c *Commands) Playlists(ctx *gctx.Context, page int) (*spotify.SimplePlaylistPage, error) {

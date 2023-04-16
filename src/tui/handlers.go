@@ -92,6 +92,13 @@ func HandlePlayTrack(ctx *gctx.Context, commands *commands.Commands, track spoti
 	}
 }
 
+func HandleSkipWithinContext(ctx *gctx.Context, commands *commands.Commands, amt int) {
+	err := commands.Next(ctx, amt)
+	if err != nil {
+		return
+	}
+}
+
 func HandleSetDevice(ctx *gctx.Context, commands *commands.Commands, player spotify.PlayerDevice) {
 	err := commands.SetDevice(ctx, player)
 	if err != nil {

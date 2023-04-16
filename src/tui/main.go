@@ -35,6 +35,7 @@ const (
 	ArtistAlbum       Mode = "artistalbum"
 	Artist            Mode = "artist"
 	Artists           Mode = "artists"
+	Queue             Mode = "queue"
 	Tracks            Mode = "tracks"
 	Albums            Mode = "albums"
 	Main              Mode = "main"
@@ -130,7 +131,7 @@ func (m *mainModel) GoBack() (tea.Cmd, error) {
 	switch m.mode {
 	case Main:
 		return tea.Quit, nil
-	case Albums, Artists, Tracks, Playlist, Devices, Search:
+	case Albums, Artists, Tracks, Playlist, Devices, Search, Queue:
 		m.mode = Main
 		new_items, err := MainView(m.ctx, m.commands)
 		if err != nil {
@@ -243,6 +244,17 @@ func (m *mainModel) CopyToClipboard() error {
 
 func (m *mainModel) SelectItem() error {
 	switch m.mode {
+	case Queue:
+		page = 1
+		go func() {
+			HandleSkipWithinContext(m.ctx, m.commands, m.list.Index())
+			new_items, err := QueueView(m.ctx, m.commands)
+			if err != nil {
+				return
+			}
+			m.list.SetItems(new_items)
+			m.list.ResetSelected()
+		}()
 	case Search:
 		page = 1
 		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
@@ -323,6 +335,14 @@ func (m *mainModel) SelectItem() error {
 	case Main:
 		page = 1
 		switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+		case spotify.Queue:
+			m.mode = Queue
+			new_items, err := QueueView(m.ctx, m.commands)
+			if err != nil {
+				return err
+			}
+			m.list.SetItems(new_items)
+			m.list.ResetSelected()
 		case *spotify.FullArtistCursorPage:
 			m.mode = Artists
 			new_items, err := ArtistsView(m.ctx, m.commands)
@@ -527,6 +547,17 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd := m.progress.SetPercent(float64(playing.Progress) / float64(playing.Item.Duration))
 			m.playing = playing
 			m.playbackContext = playbackContext
+			if m.mode == Queue {
+				if m.list.Items()[0].(mainItem).SpotifyItem.(spotify.FullTrack).Name != playing.Item.Name {
+					go func() {
+						new_items, err := QueueView(m.ctx, m.commands)
+						if err != nil {
+							return
+						}
+						m.list.SetItems(new_items)
+					}()
+				}
+			}
 			return m, tea.Batch(Tick(), cmd)
 		}
 		return m, Tick()

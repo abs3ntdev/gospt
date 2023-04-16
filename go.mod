@@ -14,6 +14,7 @@ require (
 	github.com/zmb3/spotify/v2 v2.3.1
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	google.golang.org/api v0.30.0
 	modernc.org/sqlite v1.20.4
 	tuxpa.in/a/zlog v1.60.0

@@ -3,11 +3,11 @@ package tui
 import (
 	"fmt"
 	"regexp"
-	"sync"
 	"time"
 
 	"git.asdf.cafe/abs3nt/gospt/src/commands"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/zmb3/spotify/v2"
@@ -26,6 +26,33 @@ func DeviceView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, er
 			Name:        device.Name,
 			Desc:        fmt.Sprintf("%s - active: %t", device.ID, device.Active),
 			SpotifyItem: device,
+		})
+	}
+	return items, nil
+}
+
+func QueueView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
+	items := []list.Item{}
+	tracks, err := commands.UserQueue(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items = append(items, mainItem{
+		Name:        tracks.CurrentlyPlaying.Name,
+		Artist:      tracks.CurrentlyPlaying.Artists[0],
+		Duration:    tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
+		ID:          tracks.CurrentlyPlaying.ID,
+		Desc:        tracks.CurrentlyPlaying.Artists[0].Name + " - " + tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
+		SpotifyItem: tracks.CurrentlyPlaying,
+	})
+	for _, track := range tracks.Items {
+		items = append(items, mainItem{
+			Name:        track.Name,
+			Artist:      track.Artists[0],
+			Duration:    track.TimeDuration().Round(time.Second).String(),
+			ID:          track.ID,
+			Desc:        track.Artists[0].Name + " - " + track.TimeDuration().Round(time.Second).String(),
+			SpotifyItem: track,
 		})
 	}
 	return items, nil
@@ -216,57 +243,36 @@ func SavedTracksView(ctx *gctx.Context, commands *commands.Commands) ([]list.Ite
 }
 
 func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
-	var wg sync.WaitGroup
+	wg := errgroup.Group{}
 	var saved_items *spotify.SavedTrackPage
 	var playlists *spotify.SimplePlaylistPage
 	var artists *spotify.FullArtistCursorPage
 	var albums *spotify.SavedAlbumPage
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
+	wg.Go(func() (err error) {
 		saved_items, err = commands.TrackList(ctx, 1)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	}()
+		return
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
+	wg.Go(func() (err error) {
 		playlists, err = commands.Playlists(ctx, 1)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	}()
+		return
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
+	wg.Go(func() (err error) {
 		artists, err = commands.UserArtists(ctx, 1)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	}()
+		return
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
+	wg.Go(func() (err error) {
 		albums, err = commands.UserAlbums(ctx, 1)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	}()
+		return
+	})
 
-	wg.Wait()
+	err := wg.Wait()
+	if err != nil {
+		return nil, err
+	}
 
 	items := []list.Item{}
 	if saved_items != nil && saved_items.Total != 0 {
@@ -290,6 +296,11 @@ func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, erro
 			SpotifyItem: artists,
 		})
 	}
+	items = append(items, mainItem{
+		Name:        "Queue",
+		Desc:        "Your Current Queue",
+		SpotifyItem: spotify.Queue{},
+	})
 	if playlists != nil && playlists.Total != 0 {
 		for _, playlist := range playlists.Playlists {
 			items = append(items, mainItem{
