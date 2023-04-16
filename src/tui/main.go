@@ -26,6 +26,7 @@ var (
 	main_updates     chan *mainModel
 	page             = 1
 	loading          = false
+	showingMessage   = false
 )
 
 type Mode string
@@ -90,7 +91,7 @@ type mainModel struct {
 }
 
 func (m *mainModel) PlayRadio() {
-	m.list.NewStatusMessage("Starting radio for " + m.list.SelectedItem().(mainItem).Title())
+	m.SendMessage("Starting radio for "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
 	switch item := selectedItem.(type) {
 	case spotify.SimplePlaylist:
@@ -209,54 +210,70 @@ func (m *mainModel) CopyToClipboard() error {
 	item := m.list.SelectedItem().(mainItem).SpotifyItem
 	switch converted := item.(type) {
 	case spotify.SimplePlaylist:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullPlaylist:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleAlbum:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullAlbum:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleArtist:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case *spotify.FullArtist:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SimpleTrack:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.PlaylistTrack:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.Track.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.SavedTrack:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	case spotify.FullTrack:
+		go m.SendMessage("Copying link to "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 		clipboard.WriteAll(converted.ExternalURLs["spotify"])
-		m.list.NewStatusMessage("Copying link to " + m.list.SelectedItem().(mainItem).Title())
 	}
 	return nil
+}
+
+func (m *mainModel) SendMessage(msg string, duration time.Duration) {
+	showingMessage = true
+	defer func() {
+		showingMessage = false
+	}()
+	m.list.NewStatusMessage(msg)
+	time.Sleep(duration)
 }
 
 func (m *mainModel) QueueItem() error {
 	switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
 	case spotify.PlaylistTrack:
+		go m.SendMessage("Adding "+item.Track.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.Track.ID)
 	case spotify.SavedTrack:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	case spotify.SimpleTrack:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	case spotify.FullTrack:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	case *spotify.FullTrack:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	case *spotify.SimpleTrack:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	case *spotify.SimplePlaylist:
+		go m.SendMessage("Adding "+item.Name+" to queue", 2*time.Second)
 		go HandleQueueItem(m.ctx, m.commands, item.ID)
 	}
 	if m.mode == Queue {
@@ -268,6 +285,23 @@ func (m *mainModel) QueueItem() error {
 			m.list.SetItems(new_items)
 		}()
 	}
+	return nil
+}
+
+func (m *mainModel) DeleteTrackFromPlaylist() error {
+	if m.mode != Playlist {
+		return nil
+	}
+	track := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.PlaylistTrack).Track
+	m.SendMessage("Deleteing "+track.Name+" from "+m.playlist.Name, 2*time.Second)
+	go func() {
+		HandleDeleteTrackFromPlaylist(m.ctx, m.commands, track.ID, m.playlist.ID)
+		new_items, err := PlaylistView(m.ctx, m.commands, m.playlist)
+		if err != nil {
+			return
+		}
+		m.list.SetItems(new_items)
+	}()
 	return nil
 }
 
@@ -444,9 +478,8 @@ func (m *mainModel) SelectItem() error {
 		go HandlePlayTrack(m.ctx, m.commands, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.FullTrack).ID)
 	case Devices:
 		go HandleSetDevice(m.ctx, m.commands, m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.PlayerDevice))
-		m.list.NewStatusMessage("Setting device to " + m.list.SelectedItem().FilterValue())
+		go m.SendMessage("Setting device to "+m.list.SelectedItem().FilterValue(), 2*time.Second)
 		m.mode = "main"
-		m.list.NewStatusMessage("Setting view to main")
 		new_items, err := MainView(m.ctx, m.commands)
 		if err != nil {
 			return err
@@ -594,15 +627,17 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case progress.FrameMsg:
 		progressModel, cmd := m.progress.Update(msg)
 		m.progress = progressModel.(progress.Model)
-		m.list.NewStatusMessage(
-			fmt.Sprintf("Now playing %s by %s - %s %s/%s : %s",
-				m.playing.Item.Name,
-				m.playing.Item.Artists[0].Name,
-				m.progress.View(),
-				(time.Duration(m.playing.Progress) * time.Millisecond).Round(time.Second),
-				(time.Duration(m.playing.Item.Duration) * time.Millisecond).Round(time.Second),
-				m.playbackContext),
-		)
+		if !showingMessage {
+			m.list.NewStatusMessage(
+				fmt.Sprintf("Now playing %s by %s - %s %s/%s : %s",
+					m.playing.Item.Name,
+					m.playing.Item.Artists[0].Name,
+					m.progress.View(),
+					(time.Duration(m.playing.Progress) * time.Millisecond).Round(time.Second),
+					(time.Duration(m.playing.Item.Duration) * time.Millisecond).Round(time.Second),
+					m.playbackContext),
+			)
+		}
 		return m, cmd
 	case tea.KeyMsg:
 		// quit
@@ -648,7 +683,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.list.SetItems(new_items)
 			m.list.ResetSelected()
-			m.list.NewStatusMessage("Setting view to devices")
 		}
 		// go back
 		if msg.String() == "backspace" || msg.String() == "esc" || msg.String() == "q" {
@@ -658,6 +692,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.list.ResetSelected()
 			return m, msg
+		}
+		if msg.String() == "ctrl+d" {
+			err := m.DeleteTrackFromPlaylist()
+			if err != nil {
+				return m, tea.Quit
+			}
 		}
 		if msg.String() == "ctrl+@" || msg.String() == "ctrl+p" {
 			err := m.QueueItem()
@@ -751,6 +791,7 @@ func InitMain(ctx *gctx.Context, c *commands.Commands, mode Mode) (tea.Model, er
 			key.NewBinding(key.WithKeys("<"), key.WithHelp("<", "seek backward")),
 			key.NewBinding(key.WithKeys("+"), key.WithHelp("+", "volume up")),
 			key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "volume down")),
+			key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy link to item")),
 			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
 			key.NewBinding(key.WithKeys("ctrl"+"p"), key.WithHelp("ctrl+p", "queue song")),

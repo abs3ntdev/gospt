@@ -106,6 +106,13 @@ func HandleQueueItem(ctx *gctx.Context, commands *commands.Commands, item spotif
 	}
 }
 
+func HandleDeleteTrackFromPlaylist(ctx *gctx.Context, commands *commands.Commands, item, playlist spotify.ID) {
+	err := commands.DeleteTracksFromPlaylist(ctx, []spotify.ID{item}, playlist)
+	if err != nil {
+		return
+	}
+}
+
 func HandleSetDevice(ctx *gctx.Context, commands *commands.Commands, player spotify.PlayerDevice) {
 	err := commands.SetDevice(ctx, player)
 	if err != nil {

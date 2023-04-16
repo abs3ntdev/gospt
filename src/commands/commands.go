@@ -529,6 +529,14 @@ func (c *Commands) RadioGivenSong(ctx *gctx.Context, song spotify.SimpleTrack, p
 	return nil
 }
 
+func (c *Commands) DeleteTracksFromPlaylist(ctx *gctx.Context, tracks []spotify.ID, playlist spotify.ID) error {
+	_, err := c.Client().RemoveTracksFromPlaylist(ctx, playlist, tracks...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Commands) SongExists(db *sql.DB, song spotify.ID) (bool, error) {
 	song_id := string(song)
 	sqlStmt := `SELECT id FROM radio WHERE id = ?`
