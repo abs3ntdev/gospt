@@ -57,7 +57,7 @@ func ArtistsView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, e
 		items = append(items, mainItem{
 			Name:        artist.Name,
 			ID:          artist.ID,
-			Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			Desc:        fmt.Sprintf("%d followers", artist.Followers.Count),
 			SpotifyItem: artist.SimpleArtist,
 		})
 	}
@@ -70,7 +70,7 @@ func SearchArtistsView(ctx *gctx.Context, commands *commands.Commands, artists *
 		items = append(items, mainItem{
 			Name:        artist.Name,
 			ID:          artist.ID,
-			Desc:        fmt.Sprintf("%d followers, genres: %s, popularity: %d", artist.Followers.Count, artist.Genres, artist.Popularity),
+			Desc:        fmt.Sprintf("%d followers", artist.Followers.Count),
 			SpotifyItem: artist.SimpleArtist,
 		})
 	}
@@ -110,7 +110,7 @@ func AlbumsView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, er
 		items = append(items, mainItem{
 			Name:        album.Name,
 			ID:          album.ID,
-			Desc:        fmt.Sprintf("%s, %d tracks", album.Artists[0].Name, album.Tracks.Total),
+			Desc:        fmt.Sprintf("%s by %s, %d tracks, released %d", album.AlbumType, album.Artists[0].Name, album.Tracks.Total, album.ReleaseDateTime().Year()),
 			SpotifyItem: album.SimpleAlbum,
 		})
 	}
@@ -135,7 +135,7 @@ func SearchAlbumsView(ctx *gctx.Context, commands *commands.Commands, albums *sp
 		items = append(items, mainItem{
 			Name:        album.Name,
 			ID:          album.ID,
-			Desc:        fmt.Sprintf("%s, %s", album.Artists[0].Name, album.ReleaseDateTime().String()),
+			Desc:        fmt.Sprintf("%s by %s, released %d", album.AlbumType, album.Artists[0].Name, album.ReleaseDateTime().Year()),
 			SpotifyItem: album,
 		})
 	}
