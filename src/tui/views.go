@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"regexp"
 	"sync"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/zmb3/spotify/v2"
 )
+
+const regex = `<.*?>`
 
 func DeviceView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, error) {
 	items := []list.Item{}
@@ -122,7 +125,7 @@ func SearchPlaylistsView(ctx *gctx.Context, commands *commands.Commands, playlis
 	for _, playlist := range playlists.Playlists {
 		items = append(items, mainItem{
 			Name:        playlist.Name,
-			Desc:        playlist.Description,
+			Desc:        stripHtmlRegex(playlist.Description),
 			SpotifyItem: playlist,
 		})
 	}
@@ -291,10 +294,15 @@ func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, erro
 		for _, playlist := range playlists.Playlists {
 			items = append(items, mainItem{
 				Name:        playlist.Name,
-				Desc:        playlist.Description,
+				Desc:        stripHtmlRegex(playlist.Description),
 				SpotifyItem: playlist,
 			})
 		}
 	}
 	return items, nil
+}
+
+func stripHtmlRegex(s string) string {
+	r := regexp.MustCompile(regex)
+	return r.ReplaceAllString(s, "")
 }
