@@ -242,6 +242,35 @@ func (m *mainModel) CopyToClipboard() error {
 	return nil
 }
 
+func (m *mainModel) QueueItem() error {
+	switch item := m.list.SelectedItem().(mainItem).SpotifyItem.(type) {
+	case spotify.PlaylistTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.Track.ID)
+	case spotify.SavedTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	case spotify.SimpleTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	case spotify.FullTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	case *spotify.FullTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	case *spotify.SimpleTrack:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	case *spotify.SimplePlaylist:
+		go HandleQueueItem(m.ctx, m.commands, item.ID)
+	}
+	if m.mode == Queue {
+		go func() {
+			new_items, err := QueueView(m.ctx, m.commands)
+			if err != nil {
+				return
+			}
+			m.list.SetItems(new_items)
+		}()
+	}
+	return nil
+}
+
 func (m *mainModel) SelectItem() error {
 	switch m.mode {
 	case Queue:
@@ -630,9 +659,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.ResetSelected()
 			return m, msg
 		}
-
+		if msg.String() == "ctrl+@" || msg.String() == "ctrl+p" {
+			err := m.QueueItem()
+			if err != nil {
+				return m, tea.Quit
+			}
+		}
 		// select item
-		if msg.String() == "enter" || msg.String() == "spacebar" {
+		if msg.String() == "enter" || msg.String() == " " || msg.String() == "p" {
 			err := m.SelectItem()
 			if err != nil {
 				return m, tea.Quit
@@ -697,27 +731,29 @@ func InitMain(ctx *gctx.Context, c *commands.Commands, mode Mode) (tea.Model, er
 	go m.TickPlayback()
 	Tick()
 	m.list.DisableQuitKeybindings()
+	m.list.SetFilteringEnabled(false)
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
-			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
-			key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "search")),
-			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
-			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
-			key.NewBinding(key.WithKeys("ctrl"+"shift"+"c"), key.WithHelp("ctrl+shift+c", "copy url")),
+			key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "back")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
+			key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
+			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "radio")),
+			key.NewBinding(key.WithKeys("ctrl"+"p"), key.WithHelp("ctrl+p", "queue")),
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
 	}
 	m.list.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
-			key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "search")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
+			key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
 			key.NewBinding(key.WithKeys(">"), key.WithHelp(">", "seek forward")),
 			key.NewBinding(key.WithKeys("<"), key.WithHelp("<", "seek backward")),
 			key.NewBinding(key.WithKeys("+"), key.WithHelp("+", "volume up")),
 			key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "volume down")),
 			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 			key.NewBinding(key.WithKeys("ctrl"+"r"), key.WithHelp("ctrl+r", "start radio")),
-			key.NewBinding(key.WithKeys("ctrl"+"shift"+"c"), key.WithHelp("ctrl+shift+c", "copy url")),
+			key.NewBinding(key.WithKeys("ctrl"+"p"), key.WithHelp("ctrl+p", "queue song")),
 			key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "select device")),
 		}
 	}

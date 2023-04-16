@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.asdf.cafe/abs3nt/gospt/src/cmd"
+	"git.asdf.cafe/abs3nt/gospt/cmd"
 )
 
 func main() {

@@ -99,6 +99,13 @@ func HandleSkipWithinContext(ctx *gctx.Context, commands *commands.Commands, amt
 	}
 }
 
+func HandleQueueItem(ctx *gctx.Context, commands *commands.Commands, item spotify.ID) {
+	err := commands.QueueSong(ctx, item)
+	if err != nil {
+		return
+	}
+}
+
 func HandleSetDevice(ctx *gctx.Context, commands *commands.Commands, player spotify.PlayerDevice) {
 	err := commands.SetDevice(ctx, player)
 	if err != nil {
