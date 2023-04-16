@@ -547,7 +547,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd := m.progress.SetPercent(float64(playing.Progress) / float64(playing.Item.Duration))
 			m.playing = playing
 			m.playbackContext = playbackContext
-			if m.mode == Queue {
+			if m.mode == Queue && len(m.list.Items()) != 0 {
 				if m.list.Items()[0].(mainItem).SpotifyItem.(spotify.FullTrack).Name != playing.Item.Name {
 					go func() {
 						new_items, err := QueueView(m.ctx, m.commands)

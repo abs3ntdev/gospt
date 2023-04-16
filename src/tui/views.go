@@ -37,14 +37,16 @@ func QueueView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, err
 	if err != nil {
 		return nil, err
 	}
-	items = append(items, mainItem{
-		Name:        tracks.CurrentlyPlaying.Name,
-		Artist:      tracks.CurrentlyPlaying.Artists[0],
-		Duration:    tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
-		ID:          tracks.CurrentlyPlaying.ID,
-		Desc:        tracks.CurrentlyPlaying.Artists[0].Name + " - " + tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
-		SpotifyItem: tracks.CurrentlyPlaying,
-	})
+	if tracks.CurrentlyPlaying.Name != "" {
+		items = append(items, mainItem{
+			Name:        tracks.CurrentlyPlaying.Name,
+			Artist:      tracks.CurrentlyPlaying.Artists[0],
+			Duration:    tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
+			ID:          tracks.CurrentlyPlaying.ID,
+			Desc:        tracks.CurrentlyPlaying.Artists[0].Name + " - " + tracks.CurrentlyPlaying.TimeDuration().Round(time.Second).String(),
+			SpotifyItem: tracks.CurrentlyPlaying,
+		})
+	}
 	for _, track := range tracks.Items {
 		items = append(items, mainItem{
 			Name:        track.Name,
