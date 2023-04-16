@@ -91,7 +91,7 @@ type mainModel struct {
 }
 
 func (m *mainModel) PlayRadio() {
-	m.SendMessage("Starting radio for "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
+	go m.SendMessage("Starting radio for "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
 	switch item := selectedItem.(type) {
 	case spotify.SimplePlaylist:
@@ -293,7 +293,7 @@ func (m *mainModel) DeleteTrackFromPlaylist() error {
 		return nil
 	}
 	track := m.list.SelectedItem().(mainItem).SpotifyItem.(spotify.PlaylistTrack).Track
-	m.SendMessage("Deleteing "+track.Name+" from "+m.playlist.Name, 2*time.Second)
+	go m.SendMessage("Deleteing "+track.Name+" from "+m.playlist.Name, 2*time.Second)
 	go func() {
 		HandleDeleteTrackFromPlaylist(m.ctx, m.commands, track.ID, m.playlist.ID)
 		new_items, err := PlaylistView(m.ctx, m.commands, m.playlist)
