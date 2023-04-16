@@ -25,6 +25,6 @@ var nextCmd = &cobra.Command{
 				return err
 			}
 		}
-		return commands.Next(ctx, skipAmt)
+		return commands.Next(ctx, skipAmt, false)
 	},
 }

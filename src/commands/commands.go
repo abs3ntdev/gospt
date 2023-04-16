@@ -793,7 +793,13 @@ func (c *Commands) Unlike(ctx *gctx.Context) error {
 	return nil
 }
 
-func (c *Commands) Next(ctx *gctx.Context, amt int) error {
+func (c *Commands) Next(ctx *gctx.Context, amt int, inqueue bool) error {
+	if inqueue {
+		for i := 0; i < amt; i++ {
+			c.Client().Next(ctx)
+		}
+		return nil
+	}
 	if amt == 1 {
 		err := c.Client().Next(ctx)
 		if err != nil {

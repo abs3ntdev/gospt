@@ -86,14 +86,14 @@ func HandlePlayTrack(ctx *gctx.Context, commands *commands.Commands, track spoti
 	if err != nil {
 		return
 	}
-	err = commands.Next(ctx, 1)
+	err = commands.Next(ctx, 1, false)
 	if err != nil {
 		return
 	}
 }
 
-func HandleSkipWithinContext(ctx *gctx.Context, commands *commands.Commands, amt int) {
-	err := commands.Next(ctx, amt)
+func HandleNextInQueue(ctx *gctx.Context, commands *commands.Commands, amt int) {
+	err := commands.Next(ctx, amt, true)
 	if err != nil {
 		return
 	}

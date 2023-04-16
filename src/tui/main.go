@@ -276,7 +276,7 @@ func (m *mainModel) SelectItem() error {
 	case Queue:
 		page = 1
 		go func() {
-			HandleSkipWithinContext(m.ctx, m.commands, m.list.Index())
+			HandleNextInQueue(m.ctx, m.commands, m.list.Index())
 			new_items, err := QueueView(m.ctx, m.commands)
 			if err != nil {
 				return
