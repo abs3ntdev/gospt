@@ -10,6 +10,7 @@ import (
 func (m *mainModel) LoadMoreItems() {
 	loading = true
 	defer func() {
+		page++
 		loading = false
 	}()
 	switch m.mode {
