@@ -62,18 +62,18 @@ func QueueView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, err
 
 func PlaylistView(ctx *gctx.Context, commands *commands.Commands, playlist spotify.SimplePlaylist) ([]list.Item, error) {
 	items := []list.Item{}
-	tracks, err := commands.PlaylistTracks(ctx, playlist.ID, 1)
+	playlistItems, err := commands.PlaylistTracks(ctx, playlist.ID, 1)
 	if err != nil {
 		return nil, err
 	}
-	for _, track := range tracks.Tracks {
+	for _, item := range playlistItems.Items {
 		items = append(items, mainItem{
-			Name:        track.Track.Name,
-			Artist:      track.Track.Artists[0],
-			Duration:    track.Track.TimeDuration().Round(time.Second).String(),
-			ID:          track.Track.ID,
-			Desc:        track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
-			SpotifyItem: track,
+			Name:        item.Track.Track.Name,
+			Artist:      item.Track.Track.Artists[0],
+			Duration:    item.Track.Track.TimeDuration().Round(time.Second).String(),
+			ID:          item.Track.Track.ID,
+			Desc:        item.Track.Track.Artists[0].Name + " - " + item.Track.Track.TimeDuration().Round(time.Second).String(),
+			SpotifyItem: item,
 		})
 	}
 	return items, nil
@@ -251,25 +251,25 @@ func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, erro
 	var artists *spotify.FullArtistCursorPage
 	var albums *spotify.SavedAlbumPage
 
-	wg.Go(func() (err error) {
-		saved_items, err = commands.TrackList(ctx, 1)
-		return
-	})
+	// wg.Go(func() (err error) {
+	// 	saved_items, err = commands.TrackList(ctx, 1)
+	// 	return
+	// })
 
 	wg.Go(func() (err error) {
 		playlists, err = commands.Playlists(ctx, 1)
 		return
 	})
 
-	wg.Go(func() (err error) {
-		artists, err = commands.UserArtists(ctx, 1)
-		return
-	})
-
-	wg.Go(func() (err error) {
-		albums, err = commands.UserAlbums(ctx, 1)
-		return
-	})
+	// wg.Go(func() (err error) {
+	// 	artists, err = commands.UserArtists(ctx, 1)
+	// 	return
+	// })
+	//
+	// wg.Go(func() (err error) {
+	// 	albums, err = commands.UserAlbums(ctx, 1)
+	// 	return
+	// })
 
 	err := wg.Wait()
 	if err != nil {

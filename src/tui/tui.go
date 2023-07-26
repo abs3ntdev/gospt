@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"fmt"
-
 	"git.asdf.cafe/abs3nt/gospt/src/commands"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
 
@@ -13,10 +11,10 @@ import (
 func StartTea(ctx *gctx.Context, cmd *commands.Commands, mode string) error {
 	m, err := InitMain(ctx, cmd, Mode(mode))
 	if err != nil {
-		fmt.Println("UH OH")
+		return err
 	}
 	P = tea.NewProgram(m, tea.WithAltScreen())
-	if err := P.Start(); err != nil {
+	if _, err := P.Run(); err != nil {
 		return err
 	}
 	return nil

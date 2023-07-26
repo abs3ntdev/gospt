@@ -1008,8 +1008,8 @@ func (c *Commands) Playlists(ctx *gctx.Context, page int) (*spotify.SimplePlayli
 	return c.Client().CurrentUsersPlaylists(ctx, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
 
-func (c *Commands) PlaylistTracks(ctx *gctx.Context, playlist spotify.ID, page int) (*spotify.PlaylistTrackPage, error) {
-	return c.Client().GetPlaylistTracks(ctx, playlist, spotify.Limit(50), spotify.Offset((page-1)*50))
+func (c *Commands) PlaylistTracks(ctx *gctx.Context, playlist spotify.ID, page int) (*spotify.PlaylistItemPage, error) {
+	return c.Client().GetPlaylistItems(ctx, playlist, spotify.Limit(50), spotify.Offset((page-1)*50))
 }
 
 func (c *Commands) FormatState(state *spotify.PlayerState) (string, error) {

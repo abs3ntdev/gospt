@@ -108,10 +108,7 @@ func GetClient(ctx *gctx.Context) (*spotify.Client, error) {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
-		err := server.ListenAndServe()
-		if err != nil {
-			panic(err)
-		}
+		server.ListenAndServe()
 	}()
 	url := auth.AuthURL(state)
 	fmt.Println(url)

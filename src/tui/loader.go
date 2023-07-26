@@ -110,18 +110,18 @@ func (m *mainModel) LoadMoreItems() {
 		main_updates <- m
 		return
 	case "playlist":
-		tracks, err := m.commands.PlaylistTracks(m.ctx, m.playlist.ID, (page + 1))
+		playlistItems, err := m.commands.PlaylistTracks(m.ctx, m.playlist.ID, (page + 1))
 		if err != nil {
 			return
 		}
 		items := []mainItem{}
-		for _, track := range tracks.Tracks {
+		for _, item := range playlistItems.Items {
 			items = append(items, mainItem{
-				Name:     track.Track.Name,
-				Artist:   track.Track.Artists[0],
-				Duration: track.Track.TimeDuration().Round(time.Second).String(),
-				ID:       track.Track.ID,
-				Desc:     track.Track.Artists[0].Name + " - " + track.Track.TimeDuration().Round(time.Second).String(),
+				Name:     item.Track.Track.Name,
+				Artist:   item.Track.Track.Artists[0],
+				Duration: item.Track.Track.TimeDuration().Round(time.Second).String(),
+				ID:       item.Track.Track.ID,
+				Desc:     item.Track.Track.Artists[0].Name + " - " + item.Track.Track.TimeDuration().Round(time.Second).String(),
 			})
 		}
 		for _, item := range items {
