@@ -251,25 +251,25 @@ func MainView(ctx *gctx.Context, commands *commands.Commands) ([]list.Item, erro
 	var artists *spotify.FullArtistCursorPage
 	var albums *spotify.SavedAlbumPage
 
-	// wg.Go(func() (err error) {
-	// 	saved_items, err = commands.TrackList(ctx, 1)
-	// 	return
-	// })
+	wg.Go(func() (err error) {
+		saved_items, err = commands.TrackList(ctx, 1)
+		return
+	})
 
 	wg.Go(func() (err error) {
 		playlists, err = commands.Playlists(ctx, 1)
 		return
 	})
 
-	// wg.Go(func() (err error) {
-	// 	artists, err = commands.UserArtists(ctx, 1)
-	// 	return
-	// })
-	//
-	// wg.Go(func() (err error) {
-	// 	albums, err = commands.UserAlbums(ctx, 1)
-	// 	return
-	// })
+	wg.Go(func() (err error) {
+		artists, err = commands.UserArtists(ctx, 1)
+		return
+	})
+
+	wg.Go(func() (err error) {
+		albums, err = commands.UserAlbums(ctx, 1)
+		return
+	})
 
 	err := wg.Wait()
 	if err != nil {
