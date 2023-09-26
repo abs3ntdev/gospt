@@ -2,13 +2,11 @@ package tui
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
 	"git.asdf.cafe/abs3nt/gospt/src/commands"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
-	"tuxpa.in/a/zlog/log"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
@@ -95,7 +93,6 @@ type mainModel struct {
 func (m *mainModel) PlayRadio() {
 	go m.SendMessage("Starting radio for "+m.list.SelectedItem().(mainItem).Title(), 2*time.Second)
 	selectedItem := m.list.SelectedItem().(mainItem).SpotifyItem
-	log.Info().Msgf("%s", reflect.TypeOf(selectedItem))
 	switch item := selectedItem.(type) {
 	case spotify.SimplePlaylist:
 		go HandlePlaylistRadio(m.ctx, m.commands, item)
