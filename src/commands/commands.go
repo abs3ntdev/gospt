@@ -962,7 +962,18 @@ func (c *Commands) LinkContext(ctx *gctx.Context) (string, error) {
 	return state.PlaybackContext.ExternalURLs["spotify"], nil
 }
 
-func (c *Commands) NowPlaying(ctx *gctx.Context) error {
+func (c *Commands) NowPlaying(ctx *gctx.Context, args []string) error {
+	if len(args) > 0 {
+		if args[0] == "force" {
+			current, err := c.Client().PlayerCurrentlyPlaying(ctx)
+			if err != nil {
+				return err
+			}
+			str := FormatSong(current)
+			fmt.Println(str)
+			return nil
+		}
+	}
 	song, err := cache.DefaultCache().GetOrDo("now_playing", func() (string, error) {
 		current, err := c.Client().PlayerCurrentlyPlaying(ctx)
 		if err != nil {

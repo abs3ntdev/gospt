@@ -13,7 +13,8 @@ var nowPlayingCmd = &cobra.Command{
 	Aliases: []string{"now"},
 	Short:   "Shows song and artist of currently playing song",
 	Long:    `Shows song and artist of currently playing song, useful for scripting`,
+	Args:    cobra.MatchAll(cobra.RangeArgs(0, 1)),
 	Run: func(cmd *cobra.Command, args []string) {
-		commands.NowPlaying(ctx)
+		commands.NowPlaying(ctx, args)
 	},
 }
