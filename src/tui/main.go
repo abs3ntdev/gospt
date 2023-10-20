@@ -5,9 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"git.asdf.cafe/abs3nt/gospt/src/commands"
-	"git.asdf.cafe/abs3nt/gospt/src/gctx"
-
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -16,6 +13,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zmb3/spotify/v2"
+
+	"git.asdf.cafe/abs3nt/gospt/src/commands"
+	"git.asdf.cafe/abs3nt/gospt/src/gctx"
 )
 
 var (
@@ -472,9 +472,11 @@ func (m *mainModel) SelectItem() error {
 		m.list.SetItems(new_items)
 		m.list.ResetSelected()
 	case Album, ArtistAlbum, SearchArtistAlbum, SearchAlbum:
-		go HandlePlayWithContext(m.ctx, m.commands, &m.album.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.TotalPages))
+		pos := m.list.Cursor() + (m.list.Paginator.Page * m.list.Paginator.TotalPages)
+		go HandlePlayWithContext(m.ctx, m.commands, &m.album.URI, &pos)
 	case Playlist, SearchPlaylist:
-		go HandlePlayWithContext(m.ctx, m.commands, &m.playlist.URI, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
+		pos := m.list.Cursor() + (m.list.Paginator.Page * m.list.Paginator.PerPage)
+		go HandlePlayWithContext(m.ctx, m.commands, &m.playlist.URI, &pos)
 	case Tracks:
 		go HandlePlayLikedSong(m.ctx, m.commands, m.list.Cursor()+(m.list.Paginator.Page*m.list.Paginator.PerPage))
 	case SearchTracks:

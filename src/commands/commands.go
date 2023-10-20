@@ -15,13 +15,13 @@ import (
 	"time"
 
 	"gfx.cafe/util/go/frand"
+	"github.com/zmb3/spotify/v2"
+	_ "modernc.org/sqlite"
+
 	"git.asdf.cafe/abs3nt/gospt/src/auth"
 	"git.asdf.cafe/abs3nt/gospt/src/cache"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
 	"git.asdf.cafe/abs3nt/gospt/src/youtube"
-
-	"github.com/zmb3/spotify/v2"
-	_ "modernc.org/sqlite"
 )
 
 type Commands struct {
@@ -148,7 +148,8 @@ func (c *Commands) UserArtists(ctx *gctx.Context, page int) (*spotify.FullArtist
 }
 
 func (c *Commands) ArtistAlbums(ctx *gctx.Context, artist spotify.ID, page int) (*spotify.SimpleAlbumPage, error) {
-	albums, err := c.Client().GetArtistAlbums(ctx, artist, []spotify.AlbumType{1, 2, 3, 4}, spotify.Market(spotify.CountryUSA), spotify.Limit(50), spotify.Offset((page-1)*50))
+	albums, err := c.Client().
+		GetArtistAlbums(ctx, artist, []spotify.AlbumType{1, 2, 3, 4}, spotify.Market(spotify.CountryUSA), spotify.Limit(50), spotify.Offset((page-1)*50))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,8 @@ func (c *Commands) ArtistAlbums(ctx *gctx.Context, artist spotify.ID, page int) 
 }
 
 func (c *Commands) Search(ctx *gctx.Context, search string, page int) (*spotify.SearchResult, error) {
-	result, err := c.Client().Search(ctx, search, spotify.SearchTypeAlbum|spotify.SearchTypeArtist|spotify.SearchTypeTrack|spotify.SearchTypePlaylist, spotify.Limit(50), spotify.Offset((page-1)*50))
+	result, err := c.Client().
+		Search(ctx, search, spotify.SearchTypeAlbum|spotify.SearchTypeArtist|spotify.SearchTypeTrack|spotify.SearchTypePlaylist, spotify.Limit(50), spotify.Offset((page-1)*50))
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +166,8 @@ func (c *Commands) Search(ctx *gctx.Context, search string, page int) (*spotify.
 }
 
 func (c *Commands) AlbumTracks(ctx *gctx.Context, album spotify.ID, page int) (*spotify.SimpleTrackPage, error) {
-	tracks, err := c.Client().GetAlbumTracks(ctx, album, spotify.Limit(50), spotify.Offset((page-1)*50), spotify.Market(spotify.CountryUSA))
+	tracks, err := c.Client().
+		GetAlbumTracks(ctx, album, spotify.Limit(50), spotify.Offset((page-1)*50), spotify.Market(spotify.CountryUSA))
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +241,7 @@ func (c *Commands) QueueSong(ctx *gctx.Context, id spotify.ID) error {
 	return nil
 }
 
-func (c *Commands) PlaySongInPlaylist(ctx *gctx.Context, context *spotify.URI, offset int) error {
+func (c *Commands) PlaySongInPlaylist(ctx *gctx.Context, context *spotify.URI, offset *int) error {
 	e := c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackOffset:  &spotify.PlaybackOffset{Position: offset},
 		PlaybackContext: context,
@@ -305,9 +308,6 @@ func (c *Commands) PlayLikedSongs(ctx *gctx.Context, position int) error {
 	}
 	err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &playlist.URI,
-		PlaybackOffset: &spotify.PlaybackOffset{
-			Position: 0,
-		},
 	})
 	if err != nil {
 		if isNoActiveError(err) {
@@ -317,10 +317,7 @@ func (c *Commands) PlayLikedSongs(ctx *gctx.Context, position int) error {
 			}
 			err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 				PlaybackContext: &playlist.URI,
-				PlaybackOffset: &spotify.PlaybackOffset{
-					Position: 0,
-				},
-				DeviceID: &deviceID,
+				DeviceID:        &deviceID,
 			})
 			if err != nil {
 				return err
@@ -382,9 +379,6 @@ func (c *Commands) RadioGivenArtist(ctx *gctx.Context, artist spotify.SimpleArti
 	}
 	c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
-		PlaybackOffset: &spotify.PlaybackOffset{
-			Position: 0,
-		},
 	})
 	err = c.Client().Repeat(ctx, "context")
 	if err != nil {
@@ -470,10 +464,7 @@ func (c *Commands) RadioGivenSong(ctx *gctx.Context, song spotify.SimpleTrack, p
 	}
 	err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
-		PlaybackOffset: &spotify.PlaybackOffset{
-			Position: 0,
-		},
-		PositionMs: pos,
+		PositionMs:      pos,
 	})
 	if err != nil {
 		if isNoActiveError(err) {
@@ -483,11 +474,8 @@ func (c *Commands) RadioGivenSong(ctx *gctx.Context, song spotify.SimpleTrack, p
 			}
 			err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 				PlaybackContext: &radioPlaylist.URI,
-				PlaybackOffset: &spotify.PlaybackOffset{
-					Position: 0,
-				},
-				DeviceID:   &deviceID,
-				PositionMs: pos,
+				DeviceID:        &deviceID,
+				PositionMs:      pos,
 			})
 			if err != nil {
 				return err
@@ -648,7 +636,8 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	if pages > 1 {
 		randomPage = frand.Intn(pages-1) + 1
 	}
-	playlistPage, err := c.Client().GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
+	playlistPage, err := c.Client().
+		GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
 		return fmt.Errorf("playlist page: %w", err)
 	}
@@ -840,7 +829,8 @@ func (c *Commands) Next(ctx *gctx.Context, amt int, inqueue bool) error {
 		currentTrackIndex := 0
 		page := 1
 		for !found {
-			playlist, err := c.Client().GetPlaylistItems(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
+			playlist, err := c.Client().
+				GetPlaylistItems(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
 			if err != nil {
 				return err
 			}
@@ -853,10 +843,11 @@ func (c *Commands) Next(ctx *gctx.Context, amt int, inqueue bool) error {
 			}
 			page++
 		}
+		pos := currentTrackIndex + amt
 		c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 			PlaybackContext: &current.PlaybackContext.URI,
 			PlaybackOffset: &spotify.PlaybackOffset{
-				Position: currentTrackIndex + amt,
+				Position: &pos,
 			},
 		})
 		return nil
@@ -865,7 +856,8 @@ func (c *Commands) Next(ctx *gctx.Context, amt int, inqueue bool) error {
 		currentTrackIndex := 0
 		page := 1
 		for !found {
-			playlist, err := c.Client().GetAlbumTracks(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
+			playlist, err := c.Client().
+				GetAlbumTracks(ctx, spotify.ID(strings.Split(string(current.PlaybackContext.URI), ":")[2]), spotify.Limit(50), spotify.Offset((page-1)*50))
 			if err != nil {
 				return err
 			}
@@ -878,10 +870,11 @@ func (c *Commands) Next(ctx *gctx.Context, amt int, inqueue bool) error {
 			}
 			page++
 		}
+		pos := currentTrackIndex + amt
 		c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 			PlaybackContext: &current.PlaybackContext.URI,
 			PlaybackOffset: &spotify.PlaybackOffset{
-				Position: currentTrackIndex + amt,
+				Position: &pos,
 			},
 		})
 		return nil
@@ -990,11 +983,19 @@ func (c *Commands) NowPlaying(ctx *gctx.Context, args []string) error {
 }
 
 func FormatSong(current *spotify.CurrentlyPlaying) string {
-	icon := "▶"
+	out := "▶"
 	if !current.Playing {
-		icon = "⏸"
+		out = "⏸"
 	}
-	return fmt.Sprintf("%s %s - %s", icon, current.Item.Name, current.Item.Artists[0].Name)
+	if current != nil {
+		if current.Item != nil {
+			out += fmt.Sprintf(" %s", current.Item.Name)
+			if len(current.Item.Artists) > 0 {
+				out += fmt.Sprintf(" - %s", current.Item.Artists[0].Name)
+			}
+		}
+	}
+	return out
 }
 
 func (c *Commands) Shuffle(ctx *gctx.Context) error {
@@ -1224,9 +1225,6 @@ func (c *Commands) RadioGivenList(ctx *gctx.Context, song_ids []spotify.ID, name
 	}
 	err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 		PlaybackContext: &radioPlaylist.URI,
-		PlaybackOffset: &spotify.PlaybackOffset{
-			Position: 0,
-		},
 	})
 	if err != nil {
 		if isNoActiveError(err) {
@@ -1236,10 +1234,7 @@ func (c *Commands) RadioGivenList(ctx *gctx.Context, song_ids []spotify.ID, name
 			}
 			err = c.Client().PlayOpt(ctx, &spotify.PlayOptions{
 				PlaybackContext: &radioPlaylist.URI,
-				PlaybackOffset: &spotify.PlaybackOffset{
-					Position: 0,
-				},
-				DeviceID: &deviceId,
+				DeviceID:        &deviceId,
 			})
 			if err != nil {
 				return err
@@ -1328,7 +1323,8 @@ func (c *Commands) GetRadioPlaylist(ctx *gctx.Context, name string) (*spotify.Fu
 func (c *Commands) CreateRadioPlaylist(ctx *gctx.Context, name string) (*spotify.FullPlaylist, *sql.DB, error) {
 	// private flag doesnt work
 	configDir, _ := os.UserConfigDir()
-	playlist, err := c.Client().CreatePlaylistForUser(ctx, c.User(), name+" - autoradio", "Automanaged radio playlist", false, false)
+	playlist, err := c.Client().
+		CreatePlaylistForUser(ctx, c.User(), name+" - autoradio", "Automanaged radio playlist", false, false)
 	if err != nil {
 		return nil, nil, err
 	}

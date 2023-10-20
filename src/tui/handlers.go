@@ -1,13 +1,13 @@
 package tui
 
 import (
+	"github.com/zmb3/spotify/v2"
+
 	"git.asdf.cafe/abs3nt/gospt/src/commands"
 	"git.asdf.cafe/abs3nt/gospt/src/gctx"
-
-	"github.com/zmb3/spotify/v2"
 )
 
-func HandlePlayWithContext(ctx *gctx.Context, commands *commands.Commands, uri *spotify.URI, pos int) {
+func HandlePlayWithContext(ctx *gctx.Context, commands *commands.Commands, uri *spotify.URI, pos *int) {
 	err := commands.PlaySongInPlaylist(ctx, uri, pos)
 	if err != nil {
 		return

@@ -10,7 +10,7 @@ func init() {
 
 var downloadCoverCmd = &cobra.Command{
 	Use:     "download_cover",
-	Aliases: []string{"now"},
+	Aliases: []string{"dl"},
 	Short:   "Returns url for currently playing song art",
 	Long:    `Returns url for currently playing song art`,
 	Args:    cobra.MatchAll(cobra.ExactArgs(1)),
