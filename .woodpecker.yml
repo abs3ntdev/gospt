@@ -1,6 +1,6 @@
 steps:
   build:
-    image: golang:1.21
+    image: golang:1.22
     commands:
       - go mod tidy
       - go build -o gospt
