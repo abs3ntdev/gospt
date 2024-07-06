@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"gfx.cafe/util/go/frand"
 	"github.com/zmb3/spotify/v2"
 	_ "modernc.org/sqlite"
 
@@ -257,7 +257,6 @@ func (c *Commands) PlaySongInPlaylist(ctx *gctx.Context, context *spotify.URI, o
 				PlaybackContext: context,
 				DeviceID:        &deviceID,
 			})
-
 			if err != nil {
 				if isNoActiveError(err) {
 					deviceID, err := c.activateDevice(ctx)
@@ -385,7 +384,7 @@ func (c *Commands) RadioGivenArtist(ctx *gctx.Context, artist spotify.SimpleArti
 		return err
 	}
 	for i := 0; i < 4; i++ {
-		id := frand.Intn(len(recomendationIds)-2) + 1
+		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
 			Tracks: []spotify.ID{recomendationIds[id]},
 		}
@@ -487,7 +486,7 @@ func (c *Commands) RadioGivenSong(ctx *gctx.Context, song spotify.SimpleTrack, p
 		return err
 	}
 	for i := 0; i < 4; i++ {
-		id := frand.Intn(len(recomendationIds)-2) + 1
+		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
 			Tracks: []spotify.ID{recomendationIds[id]},
 		}
@@ -559,13 +558,13 @@ func (c *Commands) Radio(ctx *gctx.Context) error {
 		if err != nil {
 			return err
 		}
-		seed_song = tracks.Tracks[frand.Intn(len(tracks.Tracks))].SimpleTrack
+		seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
 	} else if !current_song.Playing {
 		tracks, err := c.Client().CurrentUsersTracks(ctx, spotify.Limit(10))
 		if err != nil {
 			return err
 		}
-		seed_song = tracks.Tracks[frand.Intn(len(tracks.Tracks))].SimpleTrack
+		seed_song = tracks.Tracks[rand.Intn(len(tracks.Tracks))].SimpleTrack
 	}
 	return c.RadioGivenSong(ctx, seed_song, current_song.Progress)
 }
@@ -634,7 +633,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(pages-1) + 1
+		randomPage = rand.Intn(pages-1) + 1
 	}
 	playlistPage, err := c.Client().
 		GetPlaylistItems(ctx, radioPlaylist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
@@ -642,7 +641,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 		return fmt.Errorf("playlist page: %w", err)
 	}
 	pageSongs := playlistPage.Items
-	frand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
 	seedCount := 5
 	if len(pageSongs) < seedCount {
 		seedCount = len(pageSongs)
@@ -692,7 +691,7 @@ func (c *Commands) RefillRadio(ctx *gctx.Context) error {
 		return fmt.Errorf("repeat: %w", err)
 	}
 	for to_add > 0 {
-		id := frand.Intn(len(recomendationIds)-2) + 1
+		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
 			Tracks: []spotify.ID{recomendationIds[id]},
 		}
@@ -1098,14 +1097,14 @@ func (c *Commands) RadioFromPlaylist(ctx *gctx.Context, playlist spotify.SimpleP
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(pages-1) + 1
+		randomPage = rand.Intn(pages-1) + 1
 	}
 	playlistPage, err := c.Client().GetPlaylistItems(ctx, playlist.ID, spotify.Limit(50), spotify.Offset((randomPage-1)*50))
 	if err != nil {
 		return err
 	}
 	pageSongs := playlistPage.Items
-	frand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
 	seedCount := 5
 	if len(pageSongs) < seedCount {
 		seedCount = len(pageSongs)
@@ -1132,14 +1131,14 @@ func (c *Commands) RadioFromAlbum(ctx *gctx.Context, album spotify.SimpleAlbum) 
 	pages := int(math.Ceil(float64(total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(pages-1) + 1
+		randomPage = rand.Intn(pages-1) + 1
 	}
 	albumTrackPage, err := c.AlbumTracks(ctx, album.ID, randomPage)
 	if err != nil {
 		return err
 	}
 	pageSongs := albumTrackPage.Tracks
-	frand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
 	seedCount := 5
 	if len(pageSongs) < seedCount {
 		seedCount = len(pageSongs)
@@ -1165,14 +1164,14 @@ func (c *Commands) RadioFromSavedTracks(ctx *gctx.Context) error {
 	pages := int(math.Ceil(float64(savedSongs.Total) / 50))
 	randomPage := 1
 	if pages > 1 {
-		randomPage = frand.Intn(pages-1) + 1
+		randomPage = rand.Intn(pages-1) + 1
 	}
 	trackPage, err := c.Client().CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(randomPage*50))
 	if err != nil {
 		return err
 	}
 	pageSongs := trackPage.Tracks
-	frand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
+	rand.Shuffle(len(pageSongs), func(i, j int) { pageSongs[i], pageSongs[j] = pageSongs[j], pageSongs[i] })
 	seedCount := 4
 	seedIds := []spotify.ID{}
 	for idx, song := range pageSongs {
@@ -1242,7 +1241,7 @@ func (c *Commands) RadioGivenList(ctx *gctx.Context, song_ids []spotify.ID, name
 		}
 	}
 	for i := 0; i < 4; i++ {
-		id := frand.Intn(len(recomendationIds)-2) + 1
+		id := rand.Intn(len(recomendationIds)-2) + 1
 		seed := spotify.Seeds{
 			Tracks: []spotify.ID{recomendationIds[id]},
 		}
