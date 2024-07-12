@@ -15,7 +15,7 @@ require (
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/api v0.188.0
-	modernc.org/sqlite v1.30.1
+	modernc.org/sqlite v1.30.2
 	tuxpa.in/a/zlog v1.61.0
 )
 
