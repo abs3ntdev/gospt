@@ -1,6 +1,8 @@
 module git.asdf.cafe/abs3nt/gospt
 
-go 1.21
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/atotto/clipboard v0.1.4
@@ -13,7 +15,7 @@ require (
 	github.com/zmb3/spotify/v2 v2.4.2
 	golang.org/x/net v0.27.0
 	golang.org/x/oauth2 v0.21.0
-	golang.org/x/sync v0.7.0
+	golang.org/x/sync v0.12.0
 	google.golang.org/api v0.188.0
 	modernc.org/sqlite v1.30.2
 	tuxpa.in/a/zlog v1.61.0
